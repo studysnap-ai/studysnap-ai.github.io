@@ -1,6 +1,10 @@
 // api/analyze.js — Vercel serverless function
 // Receives a screenshot from the extension, calls OpenAI, returns the result.
 // Users never need their own API key — we handle it here.
+//
+// Smart model routing:
+//   Regular questions → gpt-4o-mini  (~$0.0006/capture, fast)
+//   Writing assignments → gpt-4o    (~$0.01/capture, better quality)
 
 import { createClient } from '@supabase/supabase-js';
 
@@ -9,89 +13,9 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_KEY
 );
 
-const FREE_LIMIT = 10; // captures per day for free users
+const FREE_LIMIT = 10; // captures per day on free tier
 
-export default async function handler(req, res) {
-  // ── CORS — only allow our extension and website ──────────────────────────────
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
-  if (req.method === 'OPTIONS') return res.status(200).end();
-  if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
-
-  try {
-    const { imageDataUrl, userId, token } = req.body;
-
-    if (!imageDataUrl) {
-      return res.status(400).json({ error: 'No image provided.' });
-    }
-
-    // ── Auth: verify user token from Supabase ──────────────────────────────────
-    let user = null;
-    if (token) {
-      const { data, error } = await supabase.auth.getUser(token);
-      if (!error && data?.user) {
-        user = data.user;
-      }
-    }
-
-    // ── Usage check: enforce free tier limit ───────────────────────────────────
-    if (user) {
-      const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
-
-      // Check if user has a pro subscription
-      const { data: sub } = await supabase
-        .from('subscriptions')
-        .select('status')
-        .eq('user_id', user.id)
-        .eq('status', 'active')
-        .single();
-
-      const isPro = Boolean(sub);
-
-      if (!isPro) {
-        // Get today's usage count
-        const { data: usage } = await supabase
-          .from('usage')
-          .select('count')
-          .eq('user_id', user.id)
-          .eq('date', today)
-          .single();
-
-        const todayCount = usage?.count ?? 0;
-
-        if (todayCount >= FREE_LIMIT) {
-          return res.status(429).json({
-            error: `Free limit reached (${FREE_LIMIT}/day). Upgrade to Pro for unlimited captures.`,
-            limitReached: true,
-          });
-        }
-
-        // Increment usage count
-        await supabase.from('usage').upsert({
-          user_id: user.id,
-          date: today,
-          count: todayCount + 1,
-        }, { onConflict: 'user_id,date' });
-      }
-    }
-
-    // ── Call OpenAI GPT-4o Vision ──────────────────────────────────────────────
-    const base64Image = imageDataUrl.replace(/^data:image\/\w+;base64,/, '');
-
-    const openAIResponse = await fetch('https://api.openai.com/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
-      },
-      body: JSON.stringify({
-        model: 'gpt-4o',
-        max_tokens: 1000,
-        messages: [
-          {
-            role: 'system',
-            content: `You are StudySnap, an AI study assistant. Analyze the screenshot and answer the study question shown.
+const SYSTEM_PROMPT = `You are StudySnap, an AI study assistant. Analyze the screenshot and answer the study question shown.
 
 Detect the question type and respond ONLY with valid JSON in this exact format:
 {
@@ -111,51 +35,123 @@ For "writing" type — when the question asks for a paragraph/essay with formatt
 - Use <strong>verb phrase</strong> for verb tense variety
 
 For all other types — plain text answers only.
+Keep "why" to 2-3 sentences. Keep "deepExplanation" to a short paragraph or leave empty "".`;
 
-Keep "why" to 2-3 sentences. Keep "deepExplanation" to a short paragraph or leave empty "".`,
-          },
-          {
-            role: 'user',
-            content: [
-              {
-                type: 'image_url',
-                image_url: { url: `data:image/png;base64,${base64Image}`, detail: 'high' },
-              },
-              { type: 'text', text: 'What is the question and answer?' },
-            ],
-          },
-        ],
-      }),
-    });
+// ── OpenAI helper ────────────────────────────────────────────────────────────
 
-    if (!openAIResponse.ok) {
-      const err = await openAIResponse.json();
-      console.error('[StudySnap API] OpenAI error:', err);
-      return res.status(502).json({ error: 'AI service error — please try again.' });
+async function callOpenAI(model, base64Image) {
+  const response = await fetch('https://api.openai.com/v1/chat/completions', {
+    method: 'POST',
+    headers: {
+      'Content-Type':  'application/json',
+      'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
+    },
+    body: JSON.stringify({
+      model,
+      max_tokens: 1200,
+      messages: [
+        { role: 'system', content: SYSTEM_PROMPT },
+        {
+          role: 'user',
+          content: [
+            {
+              type: 'image_url',
+              image_url: { url: `data:image/png;base64,${base64Image}`, detail: 'high' },
+            },
+            { type: 'text', text: 'What is the question and answer?' },
+          ],
+        },
+      ],
+    }),
+  });
+
+  if (!response.ok) {
+    const err = await response.json().catch(() => ({}));
+    throw new Error(err?.error?.message ?? `OpenAI ${response.status}`);
+  }
+
+  const data = await response.json();
+  const raw  = data.choices?.[0]?.message?.content ?? '';
+  const match = raw.match(/\{[\s\S]*\}/);
+  if (!match) throw new Error('Could not parse AI response');
+  return JSON.parse(match[0]);
+}
+
+// ── Main handler ─────────────────────────────────────────────────────────────
+
+export default async function handler(req, res) {
+  res.setHeader('Access-Control-Allow-Origin',  '*');
+  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  if (req.method === 'OPTIONS') return res.status(200).end();
+  if (req.method !== 'POST')    return res.status(405).json({ error: 'Method not allowed' });
+
+  try {
+    const { imageDataUrl, token } = req.body;
+    if (!imageDataUrl) return res.status(400).json({ error: 'No image provided.' });
+
+    // ── Auth: verify user token ──────────────────────────────────────────────
+    let user   = null;
+    let isPro  = false;
+
+    if (token) {
+      const { data, error } = await supabase.auth.getUser(token);
+      if (!error && data?.user) {
+        user = data.user;
+
+        // Check Pro subscription
+        const { data: sub } = await supabase
+          .from('subscriptions')
+          .select('status')
+          .eq('user_id', user.id)
+          .eq('status', 'active')
+          .single();
+
+        isPro = Boolean(sub);
+      }
     }
 
-    const openAIData = await openAIResponse.json();
-    const raw = openAIData.choices?.[0]?.message?.content ?? '';
+    // ── Usage check: enforce free tier limit ─────────────────────────────────
+    if (user && !isPro) {
+      const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
 
-    // Parse JSON from response
-    const jsonMatch = raw.match(/\{[\s\S]*\}/);
-    if (!jsonMatch) {
-      return res.status(502).json({ error: 'Could not parse AI response.' });
+      const { data: usage } = await supabase
+        .from('usage')
+        .select('count')
+        .eq('user_id', user.id)
+        .eq('date', today)
+        .single();
+
+      const todayCount = usage?.count ?? 0;
+
+      if (todayCount >= FREE_LIMIT) {
+        return res.status(429).json({
+          error: `Free limit reached (${FREE_LIMIT}/day). Upgrade to Pro for unlimited captures.`,
+          limitReached: true,
+        });
+      }
+
+      // Increment usage
+      await supabase.from('usage').upsert(
+        { user_id: user.id, date: today, count: todayCount + 1 },
+        { onConflict: 'user_id,date' }
+      );
     }
 
-    const result = JSON.parse(jsonMatch[0]);
+    // ── Smart model routing ──────────────────────────────────────────────────
+    // Step 1: gpt-4o-mini — fast, cheap, handles 90% of questions perfectly
+    const base64Image = imageDataUrl.replace(/^data:image\/\w+;base64,/, '');
+    let result = await callOpenAI('gpt-4o-mini', base64Image);
 
-    // Return remaining usage info for free users
-    const remainingCaptures = user ? null : null; // calculated above
-    return res.status(200).json({
-      ...result,
-      isPro: user ? Boolean(
-        await supabase.from('subscriptions').select('status').eq('user_id', user.id).eq('status', 'active').single()
-      ) : false,
-    });
+    // Step 2: if writing assignment detected, upgrade to gpt-4o for quality
+    if (result.questionType === 'writing') {
+      result = await callOpenAI('gpt-4o', base64Image);
+    }
+
+    return res.status(200).json({ ...result, isPro });
 
   } catch (err) {
-    console.error('[StudySnap API] Unexpected error:', err);
-    return res.status(500).json({ error: 'Something went wrong — please try again.' });
+    console.error('[StudySnap API]', err.message);
+    return res.status(500).json({ error: err.message || 'Something went wrong — please try again.' });
   }
 }
