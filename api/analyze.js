@@ -152,23 +152,22 @@ export default async function handler(req, res) {
     // ── Usage check: enforce free tier limit ─────────────────────────────────
     if (user && !isPro) {
       const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
-      const supabaseUrl = process.env.SUPABASE_URL;
-      const serviceKey  = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
-      const restHeaders = {
-        'apikey':        serviceKey,
-        'Authorization': `Bearer ${serviceKey}`,
-        'Content-Type':  'application/json',
-      };
-
-      // Read today's count
-      const readRes   = await fetch(
-        `${supabaseUrl}/rest/v1/usage?user_id=eq.${user.id}&date=eq.${today}&select=count`,
-        { headers: restHeaders }
+      // Use the user's own JWT — RLS policy allows users to read/write their own rows
+      const userClient = createClient(
+        process.env.SUPABASE_URL,
+        process.env.SUPABASE_ANON_KEY,
+        { global: { headers: { Authorization: `Bearer ${token}` } } }
       );
-      const readText  = await readRes.text();
-      let todayCount  = 0;
-      try { todayCount = JSON.parse(readText)[0]?.count ?? 0; } catch {}
+
+      const { data: usage } = await userClient
+        .from('usage')
+        .select('count')
+        .eq('user_id', user.id)
+        .eq('date', today)
+        .single();
+
+      const todayCount = usage?.count ?? 0;
 
       if (todayCount >= FREE_LIMIT) {
         return res.status(429).json({
@@ -177,20 +176,12 @@ export default async function handler(req, res) {
         });
       }
 
-      // Upsert via direct REST
-      const upsertRes = await fetch(
-        `${supabaseUrl}/rest/v1/usage?on_conflict=user_id,date`,
-        {
-          method:  'POST',
-          headers: { ...restHeaders, 'Prefer': 'resolution=merge-duplicates,return=minimal' },
-          body:    JSON.stringify({ user_id: user.id, date: today, count: todayCount + 1 }),
-        }
+      const { error: upsertError } = await userClient.from('usage').upsert(
+        { user_id: user.id, date: today, count: todayCount + 1 },
+        { onConflict: 'user_id,date' }
       );
-      const upsertText = await upsertRes.text();
-      // Single log line with everything
-      console.log(`[SS] read=${readRes.status} readBody=${readText.slice(0,80)} count=${todayCount} upsert=${upsertRes.status} upsertBody=${upsertText.slice(0,80)}`);
-      if (!upsertRes.ok) {
-        console.error(`[SS] upsert_fail status=${upsertRes.status}`);
+      if (upsertError) {
+        console.error(`[SS] upsert_fail: ${upsertError.message}`);
       }
     }
 
