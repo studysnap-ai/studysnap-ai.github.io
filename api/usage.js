@@ -9,7 +9,6 @@ const supabase = createClient(
 
 const FREE_LIMIT = 10;
 
-// Decode a Supabase-issued JWT without a network call.
 function getUserFromToken(token) {
   try {
     const payload = token.split('.')[1];
@@ -21,10 +20,10 @@ function getUserFromToken(token) {
     if (data.exp && data.exp < Math.floor(Date.now() / 1000)) return null;
     if (!data.sub) return null;
     return {
-      id:       data.sub,
-      email:    data.email,
-      name:     data.user_metadata?.full_name  || data.email,
-      avatar:   data.user_metadata?.avatar_url || null,
+      id:     data.sub,
+      email:  data.email,
+      name:   data.user_metadata?.full_name  || data.email,
+      avatar: data.user_metadata?.avatar_url || null,
     };
   } catch {
     return null;
@@ -32,9 +31,11 @@ function getUserFromToken(token) {
 }
 
 export default async function handler(req, res) {
-  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Origin',  '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  // Prevent browser/CDN caching so the count always reflects reality
+  res.setHeader('Cache-Control', 'no-store');
   if (req.method === 'OPTIONS') return res.status(200).end();
 
   const token = req.headers.authorization?.replace('Bearer ', '');
@@ -46,31 +47,29 @@ export default async function handler(req, res) {
   try {
     const today = new Date().toISOString().split('T')[0];
 
-    // Check subscription
+    // Check subscription (service role bypasses RLS on subscriptions)
     const { data: sub } = await supabase
       .from('subscriptions')
-      .select('status, period_end')
+      .select('status')
       .eq('user_id', user.id)
       .eq('status', 'active')
       .single();
 
     const isPro = Boolean(sub);
 
-    // Get today's usage
-    const { data: usage } = await supabase
-      .from('usage')
-      .select('count')
-      .eq('user_id', user.id)
-      .eq('date', today)
-      .single();
+    // Read today's usage via SECURITY DEFINER function (bypasses permission issues)
+    const { data: usedToday } = await supabase.rpc('get_usage', {
+      p_user_id: user.id,
+      p_date:    today,
+    });
 
-    const usedToday = usage?.count ?? 0;
+    const count = usedToday ?? 0;
 
     return res.status(200).json({
       isPro,
-      usedToday,
-      limit:     FREE_LIMIT,
-      remaining: isPro ? 'unlimited' : Math.max(0, FREE_LIMIT - usedToday),
+      usedToday:  count,
+      limit:      FREE_LIMIT,
+      remaining:  isPro ? 'unlimited' : Math.max(0, FREE_LIMIT - count),
       user: {
         id:     user.id,
         email:  user.email,
