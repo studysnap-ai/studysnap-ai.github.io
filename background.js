@@ -24,6 +24,10 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     runCaptureFlow(sendResponse);
     return true; // keep channel open for async response
   }
+  if (message.action === 'getValidToken') {
+    getValidToken().then(token => sendResponse({ token }));
+    return true;
+  }
   if (message.action === 'signIn') {
     signInWithGoogle(sendResponse);
     return true;
@@ -232,10 +236,53 @@ async function runCaptureFlow(sendResponse) {
   }
 }
 
+// ── Token refresh ─────────────────────────────────────────────
+
+async function getValidToken() {
+  const { ss_access_token: token, ss_refresh_token: refreshToken } =
+    await chrome.storage.local.get(['ss_access_token', 'ss_refresh_token']);
+
+  if (!token) return null;
+
+  // Check if the token expires within the next 60 seconds
+  try {
+    const payload = JSON.parse(atob(token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/')));
+    const expiresIn = payload.exp - Math.floor(Date.now() / 1000);
+    if (expiresIn > 60) return token; // Still valid
+  } catch {
+    return token; // Can't decode — use as-is
+  }
+
+  // Token expired (or expiring soon) — refresh it
+  if (!refreshToken) return token;
+
+  try {
+    const res = await fetch(`${SUPABASE_URL}/auth/v1/token?grant_type=refresh_token`, {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_ANON_KEY },
+      body:    JSON.stringify({ refresh_token: refreshToken }),
+    });
+
+    if (!res.ok) return token; // Refresh failed — fall back to old token
+
+    const tokens = await res.json();
+    if (!tokens.access_token) return token;
+
+    await chrome.storage.local.set({
+      ss_access_token:  tokens.access_token,
+      ss_refresh_token: tokens.refresh_token || refreshToken,
+    });
+
+    return tokens.access_token;
+  } catch {
+    return token;
+  }
+}
+
 // ── Backend API call ──────────────────────────────────────────
 
 async function callBackendAPI(screenshotDataUrl, pageText = null) {
-  const { ss_access_token: token } = await chrome.storage.local.get('ss_access_token');
+  const token = await getValidToken();
 
   const response = await fetch(`${BACKEND_URL}/api/analyze`, {
     method:  'POST',

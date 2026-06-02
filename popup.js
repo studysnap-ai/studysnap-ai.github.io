@@ -46,12 +46,15 @@ document.addEventListener('DOMContentLoaded', async () => {
   // Boot: decide which view to show
   // ────────────────────────────────────────────────────────────
 
-  const { ss_access_token: token, ss_user: cachedUser } =
-    await chrome.storage.local.get(['ss_access_token', 'ss_user']);
+  const { ss_access_token: token } =
+    await chrome.storage.local.get(['ss_access_token']);
 
   if (token) {
     showView(viewMain);
-    loadUsage(token);            // async — updates bar when it resolves
+    // Ask background to refresh token if expired, then load usage
+    chrome.runtime.sendMessage({ action: 'getValidToken' }, ({ token: freshToken } = {}) => {
+      loadUsage(freshToken || token);
+    });
   } else {
     showView(viewLogin);
   }
