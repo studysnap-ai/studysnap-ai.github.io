@@ -173,26 +173,39 @@ async function runCaptureFlow(sendResponse) {
         try {
           const lines = [];
 
-          // Detect selected options via multiple signals
+          // Group inputs by question — mark entire question as answered if any option is selected
           const inputs = document.querySelectorAll('input[type="radio"], input[type="checkbox"]');
-          if (inputs.length > 0) {
-            inputs.forEach(input => {
-              const label =
-                document.querySelector(`label[for="${input.id}"]`)?.innerText ||
-                input.closest('label')?.innerText ||
-                input.parentElement?.innerText || '';
+          const questionGroups = new Map();
 
-              // Check native checked state AND common CSS class patterns
-              const el = input.closest('li, div, label, tr') || input.parentElement;
-              const cls = (el?.className || '') + ' ' + (input.className || '');
-              const cssSelected = /selected|active|checked|correct|incorrect|wrong|answered|chosen|marked/i.test(cls);
-              const ariaSelected = input.getAttribute('aria-checked') === 'true' ||
-                                   el?.getAttribute('aria-selected') === 'true';
+          inputs.forEach(input => {
+            const el    = input.closest('li, div, label, tr') || input.parentElement;
+            const cls   = (el?.className || '') + ' ' + (input.className || '');
+            const label =
+              document.querySelector(`label[for="${input.id}"]`)?.innerText ||
+              input.closest('label')?.innerText ||
+              input.parentElement?.innerText || '';
 
-              const state = (input.checked || cssSelected || ariaSelected) ? '[SELECTED]' : '[ ]';
-              if (label.trim()) lines.push(`${state} ${label.trim()}`);
+            const cssSelected  = /selected|active|checked|correct|incorrect|wrong|answered|chosen|marked/i.test(cls);
+            const ariaSelected = input.getAttribute('aria-checked') === 'true' ||
+                                 el?.getAttribute('aria-selected') === 'true';
+            const isSelected   = input.checked || cssSelected || ariaSelected;
+
+            const groupKey = input.name || input.closest('fieldset, .question, .pregunta, li')?.id || input.parentElement?.parentElement?.id || 'group_' + Math.round(input.getBoundingClientRect().top / 200);
+            if (!questionGroups.has(groupKey)) questionGroups.set(groupKey, { answered: false, options: [] });
+            const g = questionGroups.get(groupKey);
+            if (isSelected) g.answered = true;
+            if (label.trim()) g.options.push({ label: label.trim(), isSelected });
+          });
+
+          questionGroups.forEach(({ answered, options }) => {
+            if (answered) {
+              lines.push('<<QUESTION ALREADY ANSWERED BY USER — SKIP THIS ENTIRE QUESTION>>');
+            }
+            options.forEach(({ label, isSelected }) => {
+              lines.push(`${isSelected ? '[USER CHOSE THIS]' : '[ ]'} ${label}`);
             });
-          }
+            lines.push('');
+          });
 
           // Also grab the main content text (for question wording)
           const selectors = ['main', 'article', '[role="main"]', 'form', '.quiz', '.question', '#content', '.content'];

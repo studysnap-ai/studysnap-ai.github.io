@@ -80,10 +80,9 @@ async function callOpenAI(model, base64Image, pageText = null) {
     {
       type: 'text',
       text: pageText
-        ? `INSTRUCTIONS:
-1. Use the SCREENSHOT to identify which questions are already answered — look for checkmarks ✓, X marks ✗, colored highlights, or any selected/filled option. Skip ALL answered questions.
-2. Use the TEXT below for exact question wording and option text (zero OCR errors).
-3. Answer ONLY the first question where all options appear unselected in the screenshot.
+        ? `The extracted page text below marks answered questions with <<QUESTION ALREADY ANSWERED BY USER — SKIP THIS ENTIRE QUESTION>>. You MUST skip every such question without exception, even if it is the first one visible.
+
+Find the first question that does NOT have that marker and answer it.
 
 --- Extracted page text ---
 ${pageText}`
