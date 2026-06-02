@@ -42,11 +42,11 @@ If multiple questions are visible, focus on the FIRST UNANSWERED question. A que
 
 CRITICAL: The "answer", "why", and "deepExplanation" fields must ALL refer to the SAME question you chose to answer. Never mix content from different questions.
 
-Respond ONLY with valid JSON in this exact format:
+Respond ONLY with valid JSON in this exact format — fields must appear in this exact order (reason before answering):
 {
   "questionType": "mcq" | "truefalse" | "fillin" | "short" | "writing" | "none",
-  "answer": "the correct answer to the chosen question",
-  "why": "explanation that directly justifies why that answer is correct for that specific question",
+  "why": "explain your reasoning FIRST — what is this question asking, and why is one option correct?",
+  "answer": "the correct answer — must match exactly what your 'why' supports",
   "deepExplanation": "...",
   "confidence": 0-100
 }
