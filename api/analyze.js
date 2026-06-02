@@ -40,11 +40,13 @@ IMPORTANT: You MUST always respond with valid JSON only — no markdown, no code
 
 If multiple questions are visible, focus on the FIRST UNANSWERED question. A question is already answered if it has a checkmark, a filled radio button, a highlighted/selected option, or any other visual indicator of a chosen answer — skip those and move to the next unanswered one.
 
+CRITICAL: The "answer", "why", and "deepExplanation" fields must ALL refer to the SAME question you chose to answer. Never mix content from different questions.
+
 Respond ONLY with valid JSON in this exact format:
 {
   "questionType": "mcq" | "truefalse" | "fillin" | "short" | "writing" | "none",
-  "answer": "...",
-  "why": "...",
+  "answer": "the correct answer to the chosen question",
+  "why": "explanation that directly justifies why that answer is correct for that specific question",
   "deepExplanation": "...",
   "confidence": 0-100
 }
