@@ -168,10 +168,11 @@ export default async function handler(req, res) {
       }
 
       // Increment usage
-      await supabase.from('usage').upsert(
+      const { error: upsertError } = await supabase.from('usage').upsert(
         { user_id: user.id, date: today, count: todayCount + 1 },
         { onConflict: 'user_id,date' }
       );
+      if (upsertError) console.error('[StudySnap] upsert error:', upsertError.message);
     }
 
     // ── Smart model routing ──────────────────────────────────────────────────
