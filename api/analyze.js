@@ -154,6 +154,13 @@ export default async function handler(req, res) {
       const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
       const supabaseUrl = process.env.SUPABASE_URL;
       const serviceKey  = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+      // Debug: log which role the key has (anon vs service_role)
+      try {
+        const keyRole = JSON.parse(Buffer.from(serviceKey.split('.')[1], 'base64').toString()).role;
+        console.log(`[SS] key_role=${keyRole} uid=${user.id}`);
+      } catch { console.log('[SS] key_role=undecodable'); }
+
       const restHeaders = {
         'apikey':        serviceKey,
         'Authorization': `Bearer ${serviceKey}`,
@@ -183,7 +190,7 @@ export default async function handler(req, res) {
       });
       if (!upsertRes.ok) {
         const errText = await upsertRes.text();
-        console.error('[StudySnap] upsert error:', upsertRes.status, errText);
+        console.error(`[SS] upsert_fail status=${upsertRes.status} err=${errText.slice(0,300)}`);
       }
     }
 
