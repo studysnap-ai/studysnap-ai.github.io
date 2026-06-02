@@ -152,15 +152,21 @@ export default async function handler(req, res) {
     // ── Usage check: enforce free tier limit ─────────────────────────────────
     if (user && !isPro) {
       const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
+      const supabaseUrl = process.env.SUPABASE_URL;
+      const serviceKey  = process.env.SUPABASE_SERVICE_ROLE_KEY;
+      const restHeaders = {
+        'apikey':        serviceKey,
+        'Authorization': `Bearer ${serviceKey}`,
+        'Content-Type':  'application/json',
+      };
 
-      const { data: usage } = await supabase
-        .from('usage')
-        .select('count')
-        .eq('user_id', user.id)
-        .eq('date', today)
-        .single();
-
-      const todayCount = usage?.count ?? 0;
+      // Read today's count via direct REST (bypasses SDK quirks)
+      const readRes  = await fetch(
+        `${supabaseUrl}/rest/v1/usage?user_id=eq.${user.id}&date=eq.${today}&select=count`,
+        { headers: restHeaders }
+      );
+      const readData = await readRes.json();
+      const todayCount = readData[0]?.count ?? 0;
 
       if (todayCount >= FREE_LIMIT) {
         return res.status(429).json({
@@ -169,12 +175,16 @@ export default async function handler(req, res) {
         });
       }
 
-      // Increment usage
-      const { error: upsertError } = await supabase.from('usage').upsert(
-        { user_id: user.id, date: today, count: todayCount + 1 },
-        { onConflict: 'user_id,date' }
-      );
-      if (upsertError) console.error('[StudySnap] upsert error:', upsertError.message);
+      // Upsert via direct REST
+      const upsertRes = await fetch(`${supabaseUrl}/rest/v1/usage`, {
+        method:  'POST',
+        headers: { ...restHeaders, 'Prefer': 'resolution=merge-duplicates' },
+        body:    JSON.stringify({ user_id: user.id, date: today, count: todayCount + 1 }),
+      });
+      if (!upsertRes.ok) {
+        const errText = await upsertRes.text();
+        console.error('[StudySnap] upsert error:', upsertRes.status, errText);
+      }
     }
 
     // ── Smart model routing ──────────────────────────────────────────────────
