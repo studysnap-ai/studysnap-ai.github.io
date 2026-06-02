@@ -159,16 +159,41 @@ async function runCaptureFlow(sendResponse) {
     // Capture the visible area of the page as a PNG data URL
     const screenshotDataUrl = await chrome.tabs.captureVisibleTab(null, { format: 'png' });
 
-    // Extract visible text from the DOM for better accuracy (no OCR errors)
+    // Extract visible text from the DOM including selection state for better accuracy
     const [{ result: pageText }] = await chrome.scripting.executeScript({
       target: { tabId: tab.id },
       func: () => {
-        const selectors = ['main', 'article', '[role="main"]', 'form', '.quiz', '.question', '#content', '.content'];
-        for (const sel of selectors) {
-          const el = document.querySelector(sel);
-          if (el) return el.innerText.slice(0, 4000);
+        try {
+          const lines = [];
+
+          // Try to extract structured radio/checkbox state
+          const inputs = document.querySelectorAll('input[type="radio"], input[type="checkbox"]');
+          if (inputs.length > 0) {
+            inputs.forEach(input => {
+              const label =
+                document.querySelector(`label[for="${input.id}"]`)?.innerText ||
+                input.closest('label')?.innerText ||
+                input.parentElement?.innerText || '';
+              const state = input.checked ? '[SELECTED]' : '[ ]';
+              if (label.trim()) lines.push(`${state} ${label.trim()}`);
+            });
+          }
+
+          // Also grab the main content text (for question wording)
+          const selectors = ['main', 'article', '[role="main"]', 'form', '.quiz', '.question', '#content', '.content'];
+          let mainText = '';
+          for (const sel of selectors) {
+            const el = document.querySelector(sel);
+            if (el) { mainText = el.innerText.slice(0, 3000); break; }
+          }
+          if (!mainText) mainText = document.body.innerText.slice(0, 3000);
+
+          return lines.length > 0
+            ? `${mainText}\n\n--- Answer state ---\n${lines.join('\n')}`
+            : mainText;
+        } catch {
+          return document.body.innerText.slice(0, 3000);
         }
-        return document.body.innerText.slice(0, 4000);
       },
     }).catch(() => [{ result: null }]);
 

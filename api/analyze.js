@@ -74,8 +74,14 @@ async function callOpenAI(model, base64Image, pageText = null) {
     {
       type: 'text',
       text: pageText
-        ? `Here is the exact text extracted from the page (use this for precise wording):\n\n${pageText}\n\nNow identify and answer the first unanswered question.`
-        : 'What is the question and answer?',
+        ? `INSTRUCTIONS:
+1. Use the SCREENSHOT to identify which questions are already answered — look for checkmarks ✓, X marks ✗, colored highlights, or any selected/filled option. Skip ALL answered questions.
+2. Use the TEXT below for exact question wording and option text (zero OCR errors).
+3. Answer ONLY the first question where all options appear unselected in the screenshot.
+
+--- Extracted page text ---
+${pageText}`
+        : 'Identify and answer the first unanswered study question visible in the screenshot.',
     },
   ];
 
