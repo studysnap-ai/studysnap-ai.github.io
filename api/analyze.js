@@ -182,15 +182,19 @@ export default async function handler(req, res) {
         });
       }
 
-      // Upsert via direct REST
-      const upsertRes = await fetch(`${supabaseUrl}/rest/v1/usage`, {
-        method:  'POST',
-        headers: { ...restHeaders, 'Prefer': 'resolution=merge-duplicates' },
-        body:    JSON.stringify({ user_id: user.id, date: today, count: todayCount + 1 }),
-      });
+      // Upsert via direct REST — on_conflict required for PostgREST merge
+      const upsertRes = await fetch(
+        `${supabaseUrl}/rest/v1/usage?on_conflict=user_id,date`,
+        {
+          method:  'POST',
+          headers: { ...restHeaders, 'Prefer': 'resolution=merge-duplicates,return=minimal' },
+          body:    JSON.stringify({ user_id: user.id, date: today, count: todayCount + 1 }),
+        }
+      );
+      const resBody = await upsertRes.text();
+      console.log(`[SS] upsert=${upsertRes.status} body=${resBody.slice(0, 150)}`);
       if (!upsertRes.ok) {
-        const errText = await upsertRes.text();
-        console.error(`[SS] upsert_fail status=${upsertRes.status} err=${errText.slice(0,300)}`);
+        console.error(`[SS] upsert_fail status=${upsertRes.status}`);
       }
     }
 
