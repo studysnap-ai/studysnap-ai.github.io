@@ -160,13 +160,8 @@ export default async function handler(req, res) {
       const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
 
       // Use the user's own JWT — RLS policy allows users to read/write their own rows
-      const userClient = createClient(
-        process.env.SUPABASE_URL,
-        PROJECT_ANON_KEY,
-        { global: { headers: { Authorization: `Bearer ${token}` } } }
-      );
-
-      const { data: usage } = await userClient
+      // Read today's count using service role (bypasses RLS)
+      const { data: usage } = await supabase
         .from('usage')
         .select('count')
         .eq('user_id', user.id)
@@ -182,13 +177,12 @@ export default async function handler(req, res) {
         });
       }
 
-      const { error: upsertError } = await userClient.from('usage').upsert(
-        { user_id: user.id, date: today, count: todayCount + 1 },
-        { onConflict: 'user_id,date' }
-      );
-      if (upsertError) {
-        console.error(`[SS] upsert_fail: ${upsertError.message}`);
-      }
+      // Increment via SECURITY DEFINER function — bypasses all permission checks
+      const { error: rpcError } = await supabase.rpc('increment_usage', {
+        p_user_id: user.id,
+        p_date:    today,
+      });
+      if (rpcError) console.error(`[SS] rpc_fail: ${rpcError.message}`);
     }
 
     // ── Smart model routing ──────────────────────────────────────────────────
