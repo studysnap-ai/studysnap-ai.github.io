@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
   "name": "StudySnap",
-  "version": "1.0.0",
-  "description": "AI-powered study assistant. Capture any question and get instant answers with explanations.",
+  "version": "2.0.0",
+  "description": "AI-powered study assistant. Capture any question and get instant answers — no API key needed.",
 
   "action": {
     "default_popup": "popup.html",
@@ -28,11 +28,12 @@
     "activeTab",
     "scripting",
     "storage",
-    "clipboardWrite"
+    "clipboardWrite",
+    "identity"
   ],
 
   "host_permissions": [
-    "https://api.openai.com/*",
-    "https://api.anthropic.com/*"
+    "https://study-snap-tau.vercel.app/*",
+    "https://vmoqyntmuyrehrtzubmj.supabase.co/*"
   ]
 }

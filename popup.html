@@ -9,9 +9,39 @@
 <body>
 
   <!-- ════════════════════════════════════════
+       VIEW 0 — Sign In
+       ════════════════════════════════════════ -->
+  <div id="viewLogin" class="view" hidden>
+    <div class="app login-app">
+
+      <div class="login-logo">
+        <span class="logo-icon">⚡</span>
+        <span class="logo-text">StudySnap</span>
+      </div>
+
+      <p class="login-tagline">AI study assistant.<br>No API key needed.</p>
+
+      <button class="google-btn" id="signInBtn">
+        <svg class="google-icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+          <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
+          <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
+          <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" fill="#FBBC05"/>
+          <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
+        </svg>
+        <span>Continue with Google</span>
+      </button>
+
+      <p class="login-error" id="loginError" hidden></p>
+
+      <p class="login-note">Free: 10 captures/day &nbsp;·&nbsp; Pro: unlimited</p>
+
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════════════
        VIEW 1 — Main
        ════════════════════════════════════════ -->
-  <div id="viewMain" class="view">
+  <div id="viewMain" class="view" hidden>
     <div class="app">
 
       <div class="header">
@@ -22,10 +52,25 @@
           </div>
           <div class="header-actions">
             <button class="icon-btn" id="historyBtn" title="Answer history">📋</button>
-            <button class="icon-btn" id="gearBtn"    title="Settings">⚙</button>
+            <button class="icon-btn" id="accountBtn" title="Account">👤</button>
           </div>
         </div>
-        <p class="subtitle">AI study assistant</p>
+      </div>
+
+      <!-- Usage bar (free users only) -->
+      <div class="usage-bar-wrap" id="usageWrap" hidden>
+        <div class="usage-bar-row">
+          <span class="usage-label" id="usageLabel">Loading…</span>
+          <span class="usage-count" id="usageCount"></span>
+        </div>
+        <div class="usage-bar-track">
+          <div class="usage-bar-fill" id="usageFill" style="width:0%"></div>
+        </div>
+      </div>
+
+      <!-- Pro badge -->
+      <div class="pro-badge-wrap" id="proBadgeWrap" hidden>
+        <span class="pro-badge">⚡ Pro — Unlimited captures</span>
       </div>
 
       <div class="main">
@@ -40,6 +85,12 @@
         </div>
 
         <p class="status" id="status"></p>
+
+        <!-- Upgrade prompt (shown when free limit is hit) -->
+        <div class="upgrade-prompt" id="upgradePrompt" hidden>
+          <p class="upgrade-text">You've used all 10 free captures today.</p>
+          <button class="upgrade-btn" id="upgradeBtn">Upgrade to Pro — $4.99/mo</button>
+        </div>
       </div>
 
       <div class="footer">Study smarter — not just faster</div>
@@ -68,63 +119,34 @@
   </div>
 
   <!-- ════════════════════════════════════════
-       VIEW 3 — Settings
+       VIEW 3 — Account
        ════════════════════════════════════════ -->
-  <div id="viewSettings" class="view" hidden>
+  <div id="viewAccount" class="view" hidden>
     <div class="app">
 
       <div class="header">
         <div class="header-row">
-          <button class="icon-btn back-btn" id="backBtn" title="Back">←</button>
-          <span class="settings-title">Settings</span>
+          <button class="icon-btn back-btn" id="accountBackBtn" title="Back">←</button>
+          <span class="settings-title">Account</span>
           <span class="logo-icon-sm">⚡</span>
         </div>
       </div>
 
-      <div class="settings-body">
+      <div class="account-body">
 
-        <div class="field-group">
-          <label class="field-label" for="providerSelect">AI Provider</label>
-          <div class="select-wrap">
-            <select id="providerSelect" class="field-select">
-              <option value="openai">OpenAI — GPT-4o</option>
-              <option value="anthropic">Anthropic — Claude</option>
-            </select>
-            <span class="select-arrow" aria-hidden="true">▾</span>
+        <div class="account-profile">
+          <img class="account-avatar" id="accountAvatar" src="" alt="" />
+          <div class="account-info">
+            <span class="account-name"  id="accountName"></span>
+            <span class="account-email" id="accountEmail"></span>
           </div>
         </div>
 
-        <div class="field-group">
-          <div class="field-label-row">
-            <label class="field-label" for="apiKeyInput">API Key</label>
-            <span class="key-badge" id="keySavedBadge" hidden>✓ Saved</span>
-          </div>
-          <div class="key-field">
-            <input
-              type="password"
-              id="apiKeyInput"
-              class="field-input key-input"
-              autocomplete="off"
-              spellcheck="false"
-              placeholder="Paste your API key here"
-            />
-            <button class="toggle-vis-btn" id="toggleVisBtn">Show</button>
-          </div>
-          <p class="field-hint">Stored on this device only — never sent anywhere except the AI provider.</p>
+        <div class="account-plan" id="accountPlan">
+          <!-- populated by JS -->
         </div>
 
-        <button class="save-btn" id="saveBtn">Save Settings</button>
-        <p class="settings-status" id="settingsStatus"></p>
-
-        <div class="help-links">
-          <p class="help-title">Get your API key:</p>
-          <a class="help-link" href="https://platform.openai.com/api-keys" target="_blank" rel="noopener">
-            ↗ OpenAI — platform.openai.com/api-keys
-          </a>
-          <a class="help-link" href="https://console.anthropic.com/settings/keys" target="_blank" rel="noopener">
-            ↗ Anthropic — console.anthropic.com
-          </a>
-        </div>
+        <button class="sign-out-btn" id="signOutBtn">Sign Out</button>
 
       </div>
     </div>

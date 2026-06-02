@@ -1,4 +1,4 @@
-/* ── StudySnap Popup Styles ──────────────────────────────────── */
+/* ── StudySnap Popup Styles v2.0 ─────────────────────────────── */
 
 *, *::before, *::after {
   box-sizing: border-box;
@@ -555,4 +555,294 @@ body {
   font-size: 11.5px;
   color: #52527a;
   line-height: 1.5;
+}
+
+/* ════════════════════════════════════════════════════════════════
+   LOGIN VIEW
+   ════════════════════════════════════════════════════════════════ */
+
+.login-app {
+  align-items: center;
+  text-align: center;
+  padding-top: 32px;
+  padding-bottom: 28px;
+  gap: 14px;
+}
+
+.login-logo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  justify-content: center;
+}
+
+.login-tagline {
+  font-size: 13px;
+  color: #5a5a7a;
+  line-height: 1.6;
+  margin-top: -4px;
+}
+
+.google-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  width: 100%;
+  padding: 11px 16px;
+  background: #fff;
+  color: #1a1a2e;
+  border: none;
+  border-radius: 10px;
+  font-size: 13.5px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: transform 0.15s, box-shadow 0.15s;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.35);
+  margin-top: 6px;
+}
+
+.google-btn:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.45);
+}
+
+.google-btn:active:not(:disabled) { transform: translateY(0); }
+
+.google-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.google-icon {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+}
+
+.login-error {
+  font-size: 12px;
+  color: #f87171;
+  line-height: 1.4;
+  max-width: 220px;
+}
+
+.login-note {
+  font-size: 11px;
+  color: #3a3a58;
+  letter-spacing: 0.2px;
+  margin-top: 4px;
+}
+
+/* ════════════════════════════════════════════════════════════════
+   USAGE BAR (main view)
+   ════════════════════════════════════════════════════════════════ */
+
+.usage-bar-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  margin-top: -6px;
+}
+
+.usage-bar-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.usage-label {
+  font-size: 11.5px;
+  color: #6b6b8a;
+}
+
+.usage-count {
+  font-size: 11px;
+  color: #3a3a58;
+}
+
+.usage-bar-track {
+  height: 4px;
+  background: #1e1e30;
+  border-radius: 99px;
+  overflow: hidden;
+}
+
+.usage-bar-fill {
+  height: 100%;
+  border-radius: 99px;
+  transition: width 0.4s ease, background 0.4s ease;
+}
+
+.pro-badge-wrap {
+  margin-top: -6px;
+}
+
+.pro-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11.5px;
+  font-weight: 600;
+  color: #a78bfa;
+  background: rgba(167, 139, 250, 0.1);
+  border: 1px solid rgba(167, 139, 250, 0.25);
+  border-radius: 20px;
+  padding: 3px 10px;
+}
+
+/* ════════════════════════════════════════════════════════════════
+   UPGRADE PROMPT
+   ════════════════════════════════════════════════════════════════ */
+
+.upgrade-prompt {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px;
+  background: rgba(99, 102, 241, 0.07);
+  border: 1px solid rgba(99, 102, 241, 0.2);
+  border-radius: 10px;
+  text-align: center;
+}
+
+.upgrade-text {
+  font-size: 12.5px;
+  color: #8080c0;
+  line-height: 1.4;
+}
+
+.upgrade-btn {
+  width: 100%;
+  padding: 10px 16px;
+  background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: transform 0.15s, box-shadow 0.15s;
+  box-shadow: 0 3px 12px rgba(99, 102, 241, 0.38);
+}
+
+.upgrade-btn:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 5px 18px rgba(99, 102, 241, 0.5);
+}
+
+.upgrade-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* ════════════════════════════════════════════════════════════════
+   ACCOUNT VIEW
+   ════════════════════════════════════════════════════════════════ */
+
+.account-body {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.account-profile {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  background: #13131e;
+  border: 1px solid #1e1e30;
+  border-radius: 10px;
+}
+
+.account-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
+.account-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.account-name {
+  font-size: 13.5px;
+  font-weight: 650;
+  color: #e0e0f8;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.account-email {
+  font-size: 11.5px;
+  color: #4a4a6a;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.account-plan {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.plan-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.2px;
+  border-radius: 20px;
+  padding: 4px 12px;
+  align-self: flex-start;
+}
+
+.plan-badge.pro {
+  color: #a78bfa;
+  background: rgba(167, 139, 250, 0.1);
+  border: 1px solid rgba(167, 139, 250, 0.25);
+}
+
+.plan-badge.free {
+  color: #6b6b8a;
+  background: rgba(107, 107, 138, 0.1);
+  border: 1px solid rgba(107, 107, 138, 0.2);
+}
+
+.plan-note {
+  font-size: 12px;
+  color: #4a4a6a;
+  line-height: 1.5;
+}
+
+.sign-out-btn {
+  width: 100%;
+  padding: 10px 16px;
+  background: none;
+  border: 1px solid #2a2a40;
+  border-radius: 8px;
+  color: #5a5a7a;
+  font-size: 13px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: border-color 0.15s, color 0.15s, background 0.15s;
+  margin-top: 4px;
+}
+
+.sign-out-btn:hover {
+  border-color: #f87171;
+  color: #f87171;
+  background: rgba(248, 113, 113, 0.06);
 }

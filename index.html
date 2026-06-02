@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>StudySnap — AI Study Assistant for Chrome</title>
-  <meta name="description" content="Capture any quiz or study question and get an instant AI-powered answer with explanation. Works with OpenAI & Anthropic.">
+  <meta name="description" content="Capture any quiz or study question and get an instant AI-powered answer with explanation. No API key needed — just sign in with Google.">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
   <style>
@@ -52,6 +52,9 @@
       font-size: 1rem;
     }
     .logo span { color: var(--yellow); }
+    .nav-links { display: flex; align-items: center; gap: 28px; }
+    .nav-link { font-size: 0.875rem; font-weight: 600; color: var(--muted); text-decoration: none; transition: color 0.2s; }
+    .nav-link:hover { color: var(--text); }
     .nav-pill {
       display: inline-flex; align-items: center; gap: 8px;
       padding: 10px 22px; background: var(--yellow);
@@ -115,7 +118,7 @@
     }
     .btn-sec:hover { border-color: var(--indigo); background: rgba(99,102,241,0.08); }
 
-    .hero-trust { display: flex; align-items: center; gap: 10px; font-size: 0.8rem; color: var(--muted); }
+    .hero-trust { display: flex; align-items: center; gap: 10px; font-size: 0.8rem; color: var(--muted); flex-wrap: wrap; }
     .trust-icon { color: var(--green); font-size: 0.9rem; }
 
     /* OVERLAY MOCK */
@@ -247,19 +250,49 @@
     .type-chip:hover { border-color: rgba(99,102,241,0.4); }
     .type-chip-icon { font-size: 1.3rem; }
 
-    /* PROVIDERS */
-    .providers-section { background: var(--navy); border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); padding: 80px 0; text-align: center; }
-    .provider-row { display: flex; justify-content: center; gap: 20px; margin-top: 40px; flex-wrap: wrap; }
-    .prov-card {
+    /* PRICING */
+    .pricing-section { background: var(--navy); border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); padding: 100px 0; }
+    .pricing-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; max-width: 760px; margin: 0 auto; }
+    .pricing-card {
       background: var(--bg); border: 1px solid var(--border);
-      border-radius: var(--radius); padding: 28px 44px;
-      display: flex; flex-direction: column; align-items: center; gap: 10px;
-      transition: border-color 0.3s, transform 0.3s;
+      border-radius: var(--radius); padding: 36px 32px;
+      display: flex; flex-direction: column; gap: 24px;
+      position: relative; transition: border-color 0.3s, transform 0.3s;
     }
-    .prov-card:hover { border-color: rgba(99,102,241,0.4); transform: translateY(-3px); }
-    .prov-icon { font-size: 2.2rem; }
-    .prov-name { font-weight: 800; }
-    .prov-model { font-size: 0.78rem; font-weight: 600; color: var(--indigo); }
+    .pricing-card:hover { border-color: rgba(99,102,241,0.35); transform: translateY(-4px); }
+    .pricing-card.pro {
+      border-color: rgba(99,102,241,0.4);
+      background: linear-gradient(160deg, rgba(99,102,241,0.06) 0%, var(--bg) 60%);
+    }
+    .pricing-card.pro:hover { border-color: rgba(139,92,246,0.6); }
+    .pro-badge-tag {
+      position: absolute; top: -13px; left: 50%; transform: translateX(-50%);
+      background: var(--gradient); border-radius: 100px;
+      padding: 4px 16px; font-size: 0.72rem; font-weight: 800;
+      color: #fff; letter-spacing: 0.06em; text-transform: uppercase; white-space: nowrap;
+    }
+    .plan-name { font-size: 1rem; font-weight: 800; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; }
+    .plan-price { display: flex; align-items: baseline; gap: 4px; }
+    .plan-price-num { font-size: 3rem; font-weight: 900; letter-spacing: -0.04em; color: var(--text); }
+    .plan-price-per { font-size: 0.85rem; color: var(--muted); font-weight: 600; }
+    .plan-desc { font-size: 0.88rem; color: var(--muted); line-height: 1.6; }
+    .plan-features { display: flex; flex-direction: column; gap: 11px; flex: 1; }
+    .plan-feat {
+      display: flex; align-items: flex-start; gap: 10px;
+      font-size: 0.88rem; color: var(--text); line-height: 1.4;
+    }
+    .plan-feat-icon { flex-shrink: 0; color: var(--green); font-size: 0.85rem; margin-top: 2px; }
+    .plan-feat-icon.dim { color: var(--muted); }
+    .plan-cta {
+      display: block; text-align: center;
+      padding: 13px 24px; border-radius: 100px;
+      font-weight: 800; font-size: 0.9rem; text-decoration: none;
+      transition: transform 0.2s, box-shadow 0.2s, background 0.2s;
+    }
+    .plan-cta.free { background: rgba(99,102,241,0.1); border: 1px solid rgba(99,102,241,0.3); color: var(--text); }
+    .plan-cta.free:hover { background: rgba(99,102,241,0.18); transform: translateY(-1px); }
+    .plan-cta.paid { background: var(--gradient); color: #fff; box-shadow: 0 6px 24px rgba(99,102,241,0.35); }
+    .plan-cta.paid:hover { transform: translateY(-2px); box-shadow: 0 10px 32px rgba(99,102,241,0.5); }
 
     /* CTA */
     .cta-section { padding: 100px 0; text-align: center; position: relative; overflow: hidden; }
@@ -285,6 +318,10 @@
       .overlay-mock { display: none; }
       .features-grid { grid-template-columns: repeat(2, 1fr); }
       .types-grid { grid-template-columns: repeat(2, 1fr); }
+      .nav-links { display: none; }
+    }
+    @media (max-width: 620px) {
+      .pricing-grid { grid-template-columns: 1fr; }
     }
     @media (max-width: 580px) {
       .features-grid { grid-template-columns: 1fr; }
@@ -307,6 +344,10 @@
         <div class="logo-icon">⚡</div>
         Study<span>Snap</span>
       </a>
+      <div class="nav-links">
+        <a href="#how" class="nav-link">How it works</a>
+        <a href="#pricing" class="nav-link">Pricing</a>
+      </div>
       <a href="https://chromewebstore.google.com/detail/studysnap/kodcbfiiefldhepmmjloifofmokhdekf" class="nav-pill">⚡ Add to Chrome — Free</a>
     </div>
   </nav>
@@ -318,16 +359,16 @@
     <div class="hero-glow-2"></div>
     <div class="container hero-inner">
       <div>
-        <div class="hero-tag"><span class="tag-dot"></span> AI-Powered · Free Chrome Extension</div>
+        <div class="hero-tag"><span class="tag-dot"></span> v2.0 · No API Key · Sign in with Google</div>
         <h1>Stop guessing.<br>Start <span class="highlight">understanding.</span></h1>
-        <p class="hero-sub">StudySnap captures any quiz or study question on your screen and delivers an instant AI answer — with a clear explanation of <em>why</em> it's correct.</p>
+        <p class="hero-sub">StudySnap captures any quiz or study question on your screen and delivers an instant AI answer — with a clear explanation of <em>why</em> it's correct. No API key, no setup.</p>
         <div class="hero-ctas">
           <a href="https://chromewebstore.google.com/detail/studysnap/kodcbfiiefldhepmmjloifofmokhdekf" class="btn-main">⚡ Add to Chrome — It's Free</a>
           <a href="#how" class="btn-sec">See how it works →</a>
         </div>
         <div class="hero-trust">
-          <span class="trust-icon">✓</span> No account needed &nbsp;·&nbsp;
-          <span class="trust-icon">✓</span> 100% private &nbsp;·&nbsp;
+          <span class="trust-icon">✓</span> No API key needed &nbsp;·&nbsp;
+          <span class="trust-icon">✓</span> Sign in with Google &nbsp;·&nbsp;
           <span class="trust-icon">✓</span> Works on any study site
         </div>
       </div>
@@ -349,6 +390,7 @@
               <div class="om-answer-box">
                 <div class="om-answer-top">
                   <span style="font-size:0.72rem;color:var(--muted)">Select on page</span>
+                  <span class="om-copy-btn">Copy</span>
                 </div>
                 <div class="om-answer-text">B) The mitochondria</div>
               </div>
@@ -374,7 +416,7 @@
             </div>
           </div>
         </div>
-        <div class="float-badge fb-bot"><span class="fb-dot" style="background:var(--yellow)"></span> GPT-4o · High confidence</div>
+        <div class="float-badge fb-bot"><span class="fb-dot" style="background:var(--yellow)"></span> Smart AI · 10 free/day</div>
       </div>
     </div>
   </section>
@@ -382,13 +424,13 @@
   <!-- STATS -->
   <div class="stats">
     <div class="container stats-inner">
-      <div class="stat"><div class="stat-num">6+</div><div class="stat-label">Question Types</div></div>
+      <div class="stat"><div class="stat-num">7+</div><div class="stat-label">Question Types</div></div>
       <div class="stat-div"></div>
-      <div class="stat"><div class="stat-num">2</div><div class="stat-label">AI Providers</div></div>
+      <div class="stat"><div class="stat-num">~2s</div><div class="stat-label">Answer Time</div></div>
       <div class="stat-div"></div>
-      <div class="stat"><div class="stat-num">0</div><div class="stat-label">Data Collected</div></div>
+      <div class="stat"><div class="stat-num">0</div><div class="stat-label">API Keys Needed</div></div>
       <div class="stat-div"></div>
-      <div class="stat"><div class="stat-num">Free</div><div class="stat-label">Always</div></div>
+      <div class="stat"><div class="stat-num">Free</div><div class="stat-label">To Get Started</div></div>
     </div>
   </div>
 
@@ -402,6 +444,11 @@
       </div>
       <div class="features-grid">
         <div class="feat">
+          <div class="feat-icon">🔑</div>
+          <h3>No API key needed</h3>
+          <p>Just sign in with Google. We handle the AI — no setup, no API accounts, no cost to you.</p>
+        </div>
+        <div class="feat">
           <div class="feat-icon">📸</div>
           <h3>One-click capture</h3>
           <p>Click the icon, hit Capture — AI reads your screen and identifies the question instantly.</p>
@@ -409,7 +456,12 @@
         <div class="feat">
           <div class="feat-icon">💡</div>
           <h3>Answer + explanation</h3>
-          <p>Every answer comes with a "Why" explanation and an optional deep-dive for harder concepts.</p>
+          <p>Every answer includes a "Why" explanation and an optional deep-dive for harder concepts.</p>
+        </div>
+        <div class="feat">
+          <div class="feat-icon">🧠</div>
+          <h3>Smart model routing</h3>
+          <p>Regular questions use our fastest AI. Writing assignments automatically upgrade to our most capable model.</p>
         </div>
         <div class="feat">
           <div class="feat-icon">📊</div>
@@ -419,17 +471,7 @@
         <div class="feat">
           <div class="feat-icon">📋</div>
           <h3>Answer history</h3>
-          <p>Every captured answer is saved locally for review. Never lose a key insight again.</p>
-        </div>
-        <div class="feat">
-          <div class="feat-icon">👍</div>
-          <h3>Feedback loop</h3>
-          <p>Rate each answer as correct or incorrect — track your AI provider's accuracy over time.</p>
-        </div>
-        <div class="feat">
-          <div class="feat-icon">🔒</div>
-          <h3>Zero data collection</h3>
-          <p>No servers. Screenshots go directly to your AI provider via your own API key. We see nothing.</p>
+          <p>Every captured answer is saved for review. Never lose a key insight again.</p>
         </div>
       </div>
     </div>
@@ -441,13 +483,13 @@
       <div class="section-header">
         <div class="section-tag">✦ How it works</div>
         <h2>Ready in under a minute</h2>
-        <p>Install, configure your API key, and start capturing questions immediately.</p>
+        <p>Install, sign in with your Google account, and start capturing questions immediately.</p>
       </div>
       <div class="steps">
         <div class="step">
           <div class="step-num-wrap">1</div>
-          <h3>Install & add your key</h3>
-          <p>Add StudySnap to Chrome, open Settings, and paste your OpenAI or Anthropic API key.</p>
+          <h3>Install & sign in</h3>
+          <p>Add StudySnap to Chrome and sign in with your Google account. No API key or credit card needed.</p>
         </div>
         <div class="step-line"></div>
         <div class="step">
@@ -485,25 +527,60 @@
     </div>
   </section>
 
-  <!-- PROVIDERS -->
-  <section class="providers-section">
+  <!-- PRICING -->
+  <section class="pricing-section" id="pricing">
     <div class="container">
       <div class="section-header">
-        <div class="section-tag">✦ AI Providers</div>
-        <h2>Your key, your choice</h2>
-        <p>Use your own API key from either provider. You stay in full control of your data and costs.</p>
+        <div class="section-tag">✦ Pricing</div>
+        <h2>Start free. Upgrade when you're ready.</h2>
+        <p>All the power you need to ace your studies — free to try, affordable to keep.</p>
       </div>
-      <div class="provider-row">
-        <div class="prov-card">
-          <div class="prov-icon">🤖</div>
-          <div class="prov-name">OpenAI</div>
-          <div class="prov-model">GPT-4o Vision</div>
+      <div class="pricing-grid">
+
+        <!-- FREE -->
+        <div class="pricing-card">
+          <div>
+            <div class="plan-name">Free</div>
+            <div class="plan-price">
+              <span class="plan-price-num">$0</span>
+              <span class="plan-price-per">/ month</span>
+            </div>
+            <p class="plan-desc">Everything you need to get started — no credit card required.</p>
+          </div>
+          <div class="plan-features">
+            <div class="plan-feat"><span class="plan-feat-icon">✓</span> 10 captures per day</div>
+            <div class="plan-feat"><span class="plan-feat-icon">✓</span> All 7+ question types</div>
+            <div class="plan-feat"><span class="plan-feat-icon">✓</span> Answer + explanation</div>
+            <div class="plan-feat"><span class="plan-feat-icon">✓</span> Confidence score</div>
+            <div class="plan-feat"><span class="plan-feat-icon">✓</span> Answer history</div>
+            <div class="plan-feat"><span class="plan-feat-icon">✓</span> Sign in with Google</div>
+          </div>
+          <a href="https://chromewebstore.google.com/detail/studysnap/kodcbfiiefldhepmmjloifofmokhdekf" class="plan-cta free">Get Started Free</a>
         </div>
-        <div class="prov-card">
-          <div class="prov-icon">⚡</div>
-          <div class="prov-name">Anthropic</div>
-          <div class="prov-model">Claude Sonnet</div>
+
+        <!-- PRO -->
+        <div class="pricing-card pro">
+          <div class="pro-badge-tag">⚡ Most Popular</div>
+          <div>
+            <div class="plan-name">Pro</div>
+            <div class="plan-price">
+              <span class="plan-price-num">$4.99</span>
+              <span class="plan-price-per">/ month</span>
+            </div>
+            <p class="plan-desc">For serious students who study hard every day.</p>
+          </div>
+          <div class="plan-features">
+            <div class="plan-feat"><span class="plan-feat-icon">✓</span> <strong>Unlimited</strong> captures per day</div>
+            <div class="plan-feat"><span class="plan-feat-icon">✓</span> All 7+ question types</div>
+            <div class="plan-feat"><span class="plan-feat-icon">✓</span> Answer + explanation</div>
+            <div class="plan-feat"><span class="plan-feat-icon">✓</span> Confidence score</div>
+            <div class="plan-feat"><span class="plan-feat-icon">✓</span> Answer history</div>
+            <div class="plan-feat"><span class="plan-feat-icon">✓</span> Sign in with Google</div>
+            <div class="plan-feat"><span class="plan-feat-icon">✓</span> Support StudySnap 🙏</div>
+          </div>
+          <a href="https://chromewebstore.google.com/detail/studysnap/kodcbfiiefldhepmmjloifofmokhdekf" class="plan-cta paid">Upgrade to Pro</a>
         </div>
+
       </div>
     </div>
   </section>
@@ -513,11 +590,12 @@
     <div class="cta-glow"></div>
     <div class="container">
       <h2>Your next exam starts <span class="highlight">now.</span></h2>
-      <p>Free to install. No account. No subscriptions. Bring your own API key and start studying smarter today.</p>
+      <p>Free to install. Sign in with Google and get 10 captures a day — no API key, no credit card, no setup.</p>
       <div class="cta-btns">
         <a href="https://chromewebstore.google.com/detail/studysnap/kodcbfiiefldhepmmjloifofmokhdekf" class="btn-main">⚡ Add to Chrome — Free</a>
+        <a href="#pricing" class="btn-sec">See pricing →</a>
       </div>
-      <p class="cta-note">Works with OpenAI & Anthropic · 100% private · No data collected</p>
+      <p class="cta-note">Free: 10 captures/day &nbsp;·&nbsp; Pro: $4.99/mo unlimited &nbsp;·&nbsp; Works on any site</p>
     </div>
   </section>
 
@@ -529,7 +607,7 @@
         <a href="privacy.html">Privacy Policy</a>
         <a href="mailto:reynolrojasv@gmail.com">Contact</a>
       </div>
-      <span class="footer-copy">© 2026 StudySnap · Built by FlowForge</span>
+      <span class="footer-copy">© 2026 StudySnap</span>
     </div>
   </footer>
 
