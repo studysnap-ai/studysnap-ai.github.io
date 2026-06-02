@@ -13,6 +13,12 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY
 );
 
+// Project-specific anon key — used to create user-scoped clients for usage tracking.
+// The SUPABASE_ANON_KEY env var may point to Vercel's own integration project,
+// so we use the correct key for vmoqyntmuyrehrtzubmj.supabase.co directly.
+const PROJECT_ANON_KEY = process.env.STUDYSNAP_ANON_KEY ||
+  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZtb3F5bnRtdXlyZWhydHp1Ym1qIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODAzNTE5ODAsImV4cCI6MjA5NTkyNzk4MH0.C3GfsbAabrLKIil8GZ6ICEmXgV5n1-W-oDPppFhgI20';
+
 const FREE_LIMIT = 10; // captures per day on free tier
 
 // Decode a Supabase-issued JWT without a network call.
@@ -156,7 +162,7 @@ export default async function handler(req, res) {
       // Use the user's own JWT — RLS policy allows users to read/write their own rows
       const userClient = createClient(
         process.env.SUPABASE_URL,
-        process.env.SUPABASE_ANON_KEY,
+        PROJECT_ANON_KEY,
         { global: { headers: { Authorization: `Bearer ${token}` } } }
       );
 
