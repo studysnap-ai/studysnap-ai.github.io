@@ -17,6 +17,10 @@
       renderOverlay(message.data);
       sendResponse({ ok: true });
     }
+    if (message.action === 'hideOverlay') {
+      if (overlayEl) { overlayEl.remove(); overlayEl = null; }
+      sendResponse({ ok: true });
+    }
     return false;
   });
 

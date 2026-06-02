@@ -160,6 +160,9 @@ async function runCaptureFlow(sendResponse) {
       return sendResponse({ success: false, error: 'No active tab found.' });
     }
 
+    // Hide any existing overlay before capturing so it doesn't appear in the screenshot
+    await chrome.tabs.sendMessage(tab.id, { action: 'hideOverlay' }).catch(() => {});
+
     // Capture the visible area of the page as a PNG data URL
     const screenshotDataUrl = await chrome.tabs.captureVisibleTab(null, { format: 'png' });
 
