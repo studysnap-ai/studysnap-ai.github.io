@@ -19,6 +19,8 @@ const SYSTEM_PROMPT = `You are StudySnap, an AI study assistant. Analyze the scr
 
 IMPORTANT: You MUST always respond with valid JSON only — no markdown, no code fences, no explanation outside the JSON. Even if no question is visible, return a JSON object with questionType "none".
 
+If multiple questions are visible, focus on the FIRST UNANSWERED question. A question is already answered if it has a checkmark, a filled radio button, a highlighted/selected option, or any other visual indicator of a chosen answer — skip those and move to the next unanswered one.
+
 Respond ONLY with valid JSON in this exact format:
 {
   "questionType": "mcq" | "truefalse" | "fillin" | "short" | "writing" | "none",
