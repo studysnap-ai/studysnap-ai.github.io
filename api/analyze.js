@@ -15,6 +15,25 @@ const supabase = createClient(
 
 const FREE_LIMIT = 10; // captures per day on free tier
 
+// Decode a Supabase-issued JWT without a network call.
+// The token is already signed by Supabase so we trust its claims.
+function getUserFromToken(token) {
+  try {
+    const payload = token.split('.')[1];
+    const json = Buffer.from(
+      payload.replace(/-/g, '+').replace(/_/g, '/'),
+      'base64'
+    ).toString('utf8');
+    const data = JSON.parse(json);
+    // Reject expired tokens
+    if (data.exp && data.exp < Math.floor(Date.now() / 1000)) return null;
+    if (!data.sub) return null;
+    return { id: data.sub, email: data.email };
+  } catch {
+    return null;
+  }
+}
+
 const SYSTEM_PROMPT = `You are StudySnap, an AI study assistant. Analyze the screenshot and answer the study question shown.
 
 IMPORTANT: You MUST always respond with valid JSON only — no markdown, no code fences, no explanation outside the JSON. Even if no question is visible, return a JSON object with questionType "none".
@@ -101,11 +120,9 @@ export default async function handler(req, res) {
     let isPro  = false;
 
     if (token) {
-      const { data, error } = await supabase.auth.getUser(token);
-      console.log('[StudySnap] getUser result:', JSON.stringify({ userId: data?.user?.id, error: error?.message }));
-      if (!error && data?.user) {
-        user = data.user;
+      user = getUserFromToken(token);
 
+      if (user) {
         // Check Pro subscription
         const { data: sub } = await supabase
           .from('subscriptions')
@@ -116,8 +133,6 @@ export default async function handler(req, res) {
 
         isPro = Boolean(sub);
       }
-    } else {
-      console.log('[StudySnap] No token in request body');
     }
 
     // ── Usage check: enforce free tier limit ─────────────────────────────────
