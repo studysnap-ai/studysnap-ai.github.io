@@ -102,6 +102,7 @@ export default async function handler(req, res) {
 
     if (token) {
       const { data, error } = await supabase.auth.getUser(token);
+      console.log('[StudySnap] getUser result:', JSON.stringify({ userId: data?.user?.id, error: error?.message }));
       if (!error && data?.user) {
         user = data.user;
 
@@ -115,6 +116,8 @@ export default async function handler(req, res) {
 
         isPro = Boolean(sub);
       }
+    } else {
+      console.log('[StudySnap] No token in request body');
     }
 
     // ── Usage check: enforce free tier limit ─────────────────────────────────
