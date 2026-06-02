@@ -155,25 +155,20 @@ export default async function handler(req, res) {
       const supabaseUrl = process.env.SUPABASE_URL;
       const serviceKey  = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
-      // Debug: log which role the key has (anon vs service_role)
-      try {
-        const keyRole = JSON.parse(Buffer.from(serviceKey.split('.')[1], 'base64').toString()).role;
-        console.log(`[SS] key_role=${keyRole} uid=${user.id}`);
-      } catch { console.log('[SS] key_role=undecodable'); }
-
       const restHeaders = {
         'apikey':        serviceKey,
         'Authorization': `Bearer ${serviceKey}`,
         'Content-Type':  'application/json',
       };
 
-      // Read today's count via direct REST (bypasses SDK quirks)
-      const readRes  = await fetch(
+      // Read today's count
+      const readRes   = await fetch(
         `${supabaseUrl}/rest/v1/usage?user_id=eq.${user.id}&date=eq.${today}&select=count`,
         { headers: restHeaders }
       );
-      const readData = await readRes.json();
-      const todayCount = readData[0]?.count ?? 0;
+      const readText  = await readRes.text();
+      let todayCount  = 0;
+      try { todayCount = JSON.parse(readText)[0]?.count ?? 0; } catch {}
 
       if (todayCount >= FREE_LIMIT) {
         return res.status(429).json({
@@ -182,7 +177,7 @@ export default async function handler(req, res) {
         });
       }
 
-      // Upsert via direct REST — on_conflict required for PostgREST merge
+      // Upsert via direct REST
       const upsertRes = await fetch(
         `${supabaseUrl}/rest/v1/usage?on_conflict=user_id,date`,
         {
@@ -191,8 +186,9 @@ export default async function handler(req, res) {
           body:    JSON.stringify({ user_id: user.id, date: today, count: todayCount + 1 }),
         }
       );
-      const resBody = await upsertRes.text();
-      console.log(`[SS] upsert=${upsertRes.status} body=${resBody.slice(0, 150)}`);
+      const upsertText = await upsertRes.text();
+      // Single log line with everything
+      console.log(`[SS] read=${readRes.status} readBody=${readText.slice(0,80)} count=${todayCount} upsert=${upsertRes.status} upsertBody=${upsertText.slice(0,80)}`);
       if (!upsertRes.ok) {
         console.error(`[SS] upsert_fail status=${upsertRes.status}`);
       }
