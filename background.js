@@ -170,7 +170,7 @@ async function runCaptureFlow(sendResponse) {
         try {
           const lines = [];
 
-          // Try to extract structured radio/checkbox state
+          // Detect selected options via multiple signals
           const inputs = document.querySelectorAll('input[type="radio"], input[type="checkbox"]');
           if (inputs.length > 0) {
             inputs.forEach(input => {
@@ -178,7 +178,15 @@ async function runCaptureFlow(sendResponse) {
                 document.querySelector(`label[for="${input.id}"]`)?.innerText ||
                 input.closest('label')?.innerText ||
                 input.parentElement?.innerText || '';
-              const state = input.checked ? '[SELECTED]' : '[ ]';
+
+              // Check native checked state AND common CSS class patterns
+              const el = input.closest('li, div, label, tr') || input.parentElement;
+              const cls = (el?.className || '') + ' ' + (input.className || '');
+              const cssSelected = /selected|active|checked|correct|incorrect|wrong|answered|chosen|marked/i.test(cls);
+              const ariaSelected = input.getAttribute('aria-checked') === 'true' ||
+                                   el?.getAttribute('aria-selected') === 'true';
+
+              const state = (input.checked || cssSelected || ariaSelected) ? '[SELECTED]' : '[ ]';
               if (label.trim()) lines.push(`${state} ${label.trim()}`);
             });
           }
