@@ -64,7 +64,21 @@ Keep "why" to 2-3 sentences. Keep "deepExplanation" to a short paragraph or leav
 
 // ── OpenAI helper ────────────────────────────────────────────────────────────
 
-async function callOpenAI(model, base64Image) {
+async function callOpenAI(model, base64Image, pageText = null) {
+  // Build user message: always include screenshot + extracted text when available
+  const userContent = [
+    {
+      type: 'image_url',
+      image_url: { url: `data:image/png;base64,${base64Image}`, detail: 'high' },
+    },
+    {
+      type: 'text',
+      text: pageText
+        ? `Here is the exact text extracted from the page (use this for precise wording):\n\n${pageText}\n\nNow identify and answer the first unanswered question.`
+        : 'What is the question and answer?',
+    },
+  ];
+
   const response = await fetch('https://api.openai.com/v1/chat/completions', {
     method: 'POST',
     headers: {
@@ -74,18 +88,10 @@ async function callOpenAI(model, base64Image) {
     body: JSON.stringify({
       model,
       max_tokens: 1200,
+      temperature: 0,   // deterministic — always pick the most confident answer
       messages: [
         { role: 'system', content: SYSTEM_PROMPT },
-        {
-          role: 'user',
-          content: [
-            {
-              type: 'image_url',
-              image_url: { url: `data:image/png;base64,${base64Image}`, detail: 'high' },
-            },
-            { type: 'text', text: 'What is the question and answer?' },
-          ],
-        },
+        { role: 'user', content: userContent },
       ],
     }),
   });
@@ -112,7 +118,7 @@ export default async function handler(req, res) {
   if (req.method !== 'POST')    return res.status(405).json({ error: 'Method not allowed' });
 
   try {
-    const { imageDataUrl, token } = req.body;
+    const { imageDataUrl, token, pageText = null } = req.body;
     if (!imageDataUrl) return res.status(400).json({ error: 'No image provided.' });
 
     // ── Auth: verify user token ──────────────────────────────────────────────
@@ -165,11 +171,11 @@ export default async function handler(req, res) {
     // ── Smart model routing ──────────────────────────────────────────────────
     // Step 1: gpt-4o-mini — fast, cheap, handles 90% of questions perfectly
     const base64Image = imageDataUrl.replace(/^data:image\/\w+;base64,/, '');
-    let result = await callOpenAI('gpt-4o-mini', base64Image);
+    let result = await callOpenAI('gpt-4o-mini', base64Image, pageText);
 
     // Step 2: if writing assignment detected, upgrade to gpt-4o for quality
     if (result.questionType === 'writing') {
-      result = await callOpenAI('gpt-4o', base64Image);
+      result = await callOpenAI('gpt-4o', base64Image, pageText);
     }
 
     return res.status(200).json({ ...result, isPro });
