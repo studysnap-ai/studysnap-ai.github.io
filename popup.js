@@ -214,16 +214,9 @@ document.addEventListener('DOMContentLoaded', async () => {
   // ── Select Area (Pro) ──────────────────────────────────────────────────────
 
   selectBtn.addEventListener('click', () => {
-    setLoading(true);
-    clearStatus();
-    window.close(); // close popup so user can draw on the page freely
-
-    chrome.runtime.sendMessage({ action: 'captureSelection' }, (response) => {
-      if (chrome.runtime.lastError || !response?.success) {
-        // Popup is closed — errors are silent here; user sees nothing
-        // Only handle limitReached which might need a notification (future work)
-      }
-    });
+    // Send message FIRST, then close — closing before sending kills the context
+    chrome.runtime.sendMessage({ action: 'captureSelection' });
+    window.close();
   });
 
   captureBtn.addEventListener('click', () => {
