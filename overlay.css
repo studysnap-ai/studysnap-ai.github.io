@@ -420,6 +420,45 @@
   letter-spacing: 0.2px !important;
 }
 
+/* ── Multi-question cards ────────────────────────────────────────────────── */
+
+#studysnap-overlay .ss-q-card {
+  display:        flex          !important;
+  flex-direction: column        !important;
+  gap:            16px          !important;
+}
+
+/* Q1 / Q2 number badge */
+#studysnap-overlay .ss-q-num {
+  display:        inline-block              !important;
+  font-size:      10px                      !important;
+  font-weight:    700                       !important;
+  letter-spacing: 0.8px                     !important;
+  color:          #6366f1                   !important;
+  background:     rgba(99,102,241,0.12)     !important;
+  border:         1px solid rgba(99,102,241,0.28) !important;
+  border-radius:  5px                       !important;
+  padding:        2px 7px                   !important;
+  margin-right:   6px                       !important;
+  vertical-align: middle                    !important;
+}
+
+/* Divider between cards */
+#studysnap-overlay .ss-q-divider {
+  border:     none                   !important;
+  border-top: 1px solid #1e1e32      !important;
+  margin:     0                      !important;
+}
+
+/* "No questions detected" empty state */
+#studysnap-overlay .ss-no-q {
+  text-align:  center   !important;
+  color:       #5a5a7a  !important;
+  font-size:   13px     !important;
+  padding:     24px 0   !important;
+  line-height: 1.6      !important;
+}
+
 /* ── Feedback row (thumbs up / down) ────────────────────────────────────── */
 
 #studysnap-overlay .ss-feedback-row {

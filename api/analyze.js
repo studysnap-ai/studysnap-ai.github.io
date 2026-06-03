@@ -37,36 +37,30 @@ function getUserFromToken(token) {
 
 const SYSTEM_PROMPT = `You are StudySnap, an AI study assistant.
 
-STEP 1 — FIND THE TARGET QUESTION:
-Scan every visible question. A question is ALREADY ANSWERED if ANY of its options shows a visual difference: green/red color, checkmark ✓, X mark ✗, highlighted background, colored text, or any icon. SKIP all answered questions. Your target is the FIRST question where ALL options look identical and unselected (same color, no icons, no highlights).
+Analyze the screenshot and answer ALL visible UNANSWERED questions in one response.
 
-STEP 2 — ANSWER THE TARGET QUESTION:
-Answer only the target question identified in Step 1. Do not answer any question that has any visual indicator on any of its options.
+IDENTIFYING ANSWERED QUESTIONS:
+A question is already answered if ANY of its options looks different from the others: colored text (green/red), checkmark ✓, X mark ✗, highlighted background, or any icon. SKIP those entirely — do not include them in your response.
 
-STEP 3 — OUTPUT JSON:
-You MUST always respond with valid JSON only — no markdown, no code fences. Fields must appear in this exact order:
+An UNANSWERED question has ALL options looking visually identical (same color, no icons, no highlights).
+
+OUTPUT — respond ONLY with valid JSON (no markdown, no code fences):
 {
-  "questionType": "mcq" | "truefalse" | "fillin" | "short" | "writing" | "none",
-  "why": "explain your reasoning — what is the TARGET question asking, and why is one option correct?",
-  "answer": "the correct answer to the TARGET question — must match what your 'why' supports",
-  "deepExplanation": "...",
-  "confidence": 0-100
+  "questions": [
+    {
+      "questionType": "mcq" | "truefalse" | "fillin" | "short" | "writing" | "none",
+      "why": "1-2 sentence reasoning for this specific question",
+      "answer": "the correct answer — must match what 'why' supports",
+      "deepExplanation": "",
+      "confidence": 0-100
+    }
+  ]
 }
 
-If no unanswered question is visible, use questionType "none", answer "No unanswered question detected.", why "", deepExplanation "", confidence 0.
-
-If no study question is visible in the screenshot, use questionType "none", set answer to "No question detected — please navigate to a page with a study question and try again.", why to "", deepExplanation to "", confidence to 0.
-
-For "writing" type — when the question asks for a paragraph/essay with formatting requirements:
-- Write a full paragraph (8+ sentences) in the answer field using HTML tags
-- Use <u>...</u> for the topic sentence
-- Use <span class="ss-blue">word</span> for subordinate conjunctions (although, because, since, while, if, unless, when, after, before, as)
-- Use <span class="ss-green">word</span> for coordinate conjunctions (for, and, nor, but, or, yet, so)
-- Use <span class="ss-red">word</span> for transitional adverbs (however, furthermore, additionally, consequently, therefore, moreover, nevertheless, meanwhile)
-- Use <strong>verb phrase</strong> for verb tense variety
-
-For all other types — plain text answers only.
-Keep "why" to 2-3 sentences. Keep "deepExplanation" to a short paragraph or leave empty "".`;
+Include one entry per unanswered question, in order of appearance.
+If no unanswered questions are visible, return { "questions": [] }.
+The "answer" and "why" fields must always refer to the same question.
+Plain text answers only (no HTML) unless it is a writing/essay assignment.`;
 
 // ── OpenAI helper ────────────────────────────────────────────────────────────
 
@@ -80,13 +74,13 @@ async function callOpenAI(model, base64Image, pageText = null) {
     {
       type: 'text',
       text: pageText
-        ? `The extracted page text below marks answered questions with <<QUESTION ALREADY ANSWERED BY USER — SKIP THIS ENTIRE QUESTION>>. You MUST skip every such question without exception, even if it is the first one visible.
+        ? `The extracted text below marks answered questions with <<QUESTION ALREADY ANSWERED BY USER — SKIP>>. Skip every question with that marker.
 
-Find the first question that does NOT have that marker and answer it.
+Answer ALL remaining unanswered questions visible in the screenshot.
 
 --- Extracted page text ---
 ${pageText}`
-        : 'Identify and answer the first unanswered study question visible in the screenshot.',
+        : 'Identify and answer ALL unanswered study questions visible in the screenshot.',
     },
   ];
 
@@ -98,7 +92,7 @@ ${pageText}`
     },
     body: JSON.stringify({
       model,
-      max_tokens: 1200,
+      max_tokens: 2000,
       temperature: 0,   // deterministic — always pick the most confident answer
       messages: [
         { role: 'system', content: SYSTEM_PROMPT },
@@ -112,11 +106,15 @@ ${pageText}`
     throw new Error(err?.error?.message ?? `OpenAI ${response.status}`);
   }
 
-  const data = await response.json();
-  const raw  = data.choices?.[0]?.message?.content ?? '';
+  const data  = await response.json();
+  const raw   = data.choices?.[0]?.message?.content ?? '';
   const match = raw.match(/\{[\s\S]*\}/);
   if (!match) throw new Error('Could not parse AI response');
-  return JSON.parse(match[0]);
+  const parsed = JSON.parse(match[0]);
+  // Normalise: API always returns { questions: [...] }
+  if (Array.isArray(parsed.questions)) return parsed;
+  // Fallback: old single-question format wrapped into array
+  return { questions: [parsed] };
 }
 
 // ── Main handler ─────────────────────────────────────────────────────────────
@@ -182,15 +180,9 @@ export default async function handler(req, res) {
       if (rpcError) console.error(`[SS] rpc_fail: ${rpcError.message}`);
     }
 
-    // ── Smart model routing ──────────────────────────────────────────────────
-    // Step 1: gpt-4o-mini — fast, cheap, handles 90% of questions perfectly
+    // ── AI call ──────────────────────────────────────────────────────────────
     const base64Image = imageDataUrl.replace(/^data:image\/\w+;base64,/, '');
-    let result = await callOpenAI('gpt-4o-mini', base64Image, pageText);
-
-    // Step 2: if writing assignment detected, upgrade to gpt-4o for quality
-    if (result.questionType === 'writing') {
-      result = await callOpenAI('gpt-4o', base64Image, pageText);
-    }
+    const result      = await callOpenAI('gpt-4o-mini', base64Image, pageText);
 
     return res.status(200).json({ ...result, isPro });
 

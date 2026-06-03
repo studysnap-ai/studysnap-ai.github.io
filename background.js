@@ -239,8 +239,10 @@ async function runCaptureFlow(sendResponse) {
     // Send to backend for AI analysis
     const result = await callBackendAPI(screenshotDataUrl, pageText);
 
-    // Generate a shared ID so overlay and history entry stay linked
-    const entryId = Date.now();
+    // One unique ID per question so history entries and feedback stay correctly linked
+    const now      = Date.now();
+    const questions = result.questions ?? [];
+    const entryIds  = questions.map((_, i) => now + i);
 
     // Inject overlay stylesheet and content script into the page
     await chrome.scripting.insertCSS({ target: { tabId: tab.id }, files: ['overlay.css'] });
@@ -249,10 +251,14 @@ async function runCaptureFlow(sendResponse) {
     // Give content script a moment to initialize before messaging it
     await delay(150);
 
-    await chrome.tabs.sendMessage(tab.id, { action: 'showOverlay', data: { ...result, entryId } });
+    // Send all questions + their IDs to the content script
+    await chrome.tabs.sendMessage(tab.id, {
+      action: 'showOverlay',
+      data:   { questions, entryIds }
+    });
 
-    // Save to history (non-blocking)
-    saveToHistory(result, entryId);
+    // Save every question to history (non-blocking)
+    questions.forEach((q, i) => saveToHistory(q, entryIds[i]));
 
     sendResponse({ success: true });
 
