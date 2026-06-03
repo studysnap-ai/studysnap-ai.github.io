@@ -64,6 +64,17 @@ as $$
   do update set count = usage.count + 1;
 $$;
 
+-- Returns subscription status for a user (used by /api/usage and /api/analyze)
+create or replace function get_subscription(p_user_id uuid)
+returns text
+language sql
+security definer
+set search_path = public
+as $$
+  select status from subscriptions where user_id = p_user_id limit 1;
+$$;
+
 -- Grant execute to the service role and anon role
-grant execute on function get_usage(uuid, date)       to service_role, anon, authenticated;
-grant execute on function increment_usage(uuid, date) to service_role, anon, authenticated;
+grant execute on function get_usage(uuid, date)        to service_role, anon, authenticated;
+grant execute on function increment_usage(uuid, date)  to service_role, anon, authenticated;
+grant execute on function get_subscription(uuid)       to service_role, anon, authenticated;

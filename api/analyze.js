@@ -138,15 +138,11 @@ export default async function handler(req, res) {
       user = getUserFromToken(token);
 
       if (user) {
-        // Check Pro subscription
-        const { data: sub } = await supabase
-          .from('subscriptions')
-          .select('status')
-          .eq('user_id', user.id)
-          .eq('status', 'active')
-          .single();
-
-        isPro = Boolean(sub);
+        // Check Pro subscription via SECURITY DEFINER RPC (bypasses RLS)
+        const { data: status } = await supabase.rpc('get_subscription', {
+          p_user_id: user.id,
+        });
+        isPro = status === 'active';
       }
     }
 

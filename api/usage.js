@@ -47,15 +47,11 @@ export default async function handler(req, res) {
   try {
     const today = new Date().toISOString().split('T')[0];
 
-    // Check subscription (service role bypasses RLS on subscriptions)
-    const { data: sub } = await supabase
-      .from('subscriptions')
-      .select('status')
-      .eq('user_id', user.id)
-      .eq('status', 'active')
-      .single();
-
-    const isPro = Boolean(sub);
+    // Check subscription via SECURITY DEFINER RPC (bypasses RLS)
+    const { data: status } = await supabase.rpc('get_subscription', {
+      p_user_id: user.id,
+    });
+    const isPro = status === 'active';
 
     // Read today's usage via SECURITY DEFINER function (bypasses permission issues)
     const { data: usedToday } = await supabase.rpc('get_usage', {
