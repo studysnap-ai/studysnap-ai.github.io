@@ -322,11 +322,11 @@ async function runSelectionFlow(sendResponse) {
     await delay(120);
 
     // Capture the full visible tab, then crop to the selected region
-    const fullScreenshot  = await chrome.tabs.captureVisibleTab(null, { format: 'png' });
-    const croppedDataUrl  = await cropScreenshot(fullScreenshot, rect);
+    const fullScreenshot = await chrome.tabs.captureVisibleTab(null, { format: 'png' });
+    const croppedDataUrl = await cropScreenshot(fullScreenshot, rect);
 
-    // Send to backend (no DOM text extraction — the region is already focused)
-    const result = await callBackendAPI(croppedDataUrl, null);
+    // Region capture: skip gpt-4o-mini entirely — user drew a box for precision
+    const result = await callBackendAPI(croppedDataUrl, null, { precise: true });
 
     const now       = Date.now();
     const questions = result.questions ?? [];
@@ -416,7 +416,7 @@ async function getValidToken() {
 
 // ── Backend API call ──────────────────────────────────────────
 
-async function callBackendAPI(screenshotDataUrl, pageText = null) {
+async function callBackendAPI(screenshotDataUrl, pageText = null, options = {}) {
   const token = await getValidToken();
 
   const response = await fetch(`${BACKEND_URL}/api/analyze`, {
@@ -425,7 +425,12 @@ async function callBackendAPI(screenshotDataUrl, pageText = null) {
       'Content-Type': 'application/json',
       ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
     },
-    body: JSON.stringify({ imageDataUrl: screenshotDataUrl, token, pageText }),
+    body: JSON.stringify({
+      imageDataUrl: screenshotDataUrl,
+      token,
+      pageText,
+      precise: options.precise ?? false,
+    }),
   });
 
   const data = await response.json();

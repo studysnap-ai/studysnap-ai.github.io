@@ -131,7 +131,7 @@ export default async function handler(req, res) {
   if (req.method !== 'POST')    return res.status(405).json({ error: 'Method not allowed' });
 
   try {
-    const { imageDataUrl, token, pageText = null } = req.body;
+    const { imageDataUrl, token, pageText = null, precise = false } = req.body;
     if (!imageDataUrl) return res.status(400).json({ error: 'No image provided.' });
 
     // ── Auth: verify user token ──────────────────────────────────────────────
@@ -181,18 +181,25 @@ export default async function handler(req, res) {
     }
 
     // ── AI call — smart model routing ────────────────────────────────────────
-    // Step 1: fast + cheap model handles the majority of questions well
     const base64Image = imageDataUrl.replace(/^data:image\/\w+;base64,/, '');
-    let result = await callOpenAI('gpt-4o-mini', base64Image, pageText);
+    let result;
+    let upgraded = false;
 
-    // Step 2: if any question came back with low confidence (<70%), the
-    // mini model was uncertain — upgrade to gpt-4o for the full request
-    const hasLowConfidence = (result.questions ?? []).some(q => (q.confidence ?? 100) < 70);
-    if (hasLowConfidence) {
-      result = await callOpenAI('gpt-4o', base64Image, pageText);
+    if (precise) {
+      // Region selection: user wants accuracy — skip mini and go straight to gpt-4o
+      result   = await callOpenAI('gpt-4o', base64Image, pageText);
+      upgraded = true;
+    } else {
+      // Normal capture: start cheap, upgrade only if confidence is low
+      result = await callOpenAI('gpt-4o-mini', base64Image, pageText);
+      const hasLowConfidence = (result.questions ?? []).some(q => (q.confidence ?? 100) < 70);
+      if (hasLowConfidence) {
+        result   = await callOpenAI('gpt-4o', base64Image, pageText);
+        upgraded = true;
+      }
     }
 
-    return res.status(200).json({ ...result, isPro, upgraded: hasLowConfidence });
+    return res.status(200).json({ ...result, isPro, upgraded });
 
   } catch (err) {
     console.error('[StudySnap API]', err.message);
