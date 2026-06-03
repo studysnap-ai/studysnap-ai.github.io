@@ -150,24 +150,21 @@ export default async function handler(req, res) {
       }
     }
 
-    // ── Usage check: enforce free tier limit ─────────────────────────────────
+    // ── Usage check: enforce free tier limit (including share bonus) ─────────
     if (user && !isPro) {
-      const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
+      const today = new Date().toISOString().split('T')[0];
 
-      // Use the user's own JWT — RLS policy allows users to read/write their own rows
-      // Read today's count using service role (bypasses RLS)
-      const { data: usage } = await supabase
-        .from('usage')
-        .select('count')
-        .eq('user_id', user.id)
-        .eq('date', today)
-        .single();
+      const [{ data: usageCount }, { data: bonus }] = await Promise.all([
+        supabase.rpc('get_usage', { p_user_id: user.id, p_date: today }),
+        supabase.rpc('get_bonus', { p_user_id: user.id, p_date: today }),
+      ]);
 
-      const todayCount = usage?.count ?? 0;
+      const todayCount     = usageCount ?? 0;
+      const effectiveLimit = FREE_LIMIT + (bonus ?? 0);
 
-      if (todayCount >= FREE_LIMIT) {
+      if (todayCount >= effectiveLimit) {
         return res.status(429).json({
-          error: `Free limit reached (${FREE_LIMIT}/day). Upgrade to Pro for unlimited captures.`,
+          error: `Free limit reached (${effectiveLimit}/day). Upgrade to Pro for unlimited captures.`,
           limitReached: true,
         });
       }

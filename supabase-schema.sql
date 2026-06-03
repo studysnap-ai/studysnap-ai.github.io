@@ -78,3 +78,40 @@ $$;
 grant execute on function get_usage(uuid, date)        to service_role, anon, authenticated;
 grant execute on function increment_usage(uuid, date)  to service_role, anon, authenticated;
 grant execute on function get_subscription(uuid)       to service_role, anon, authenticated;
+
+-- ── Share for +1 reward ────────────────────────────────────────────────────
+-- Adds a bonus column to usage to track extra captures earned via sharing.
+-- Run this block once in Supabase SQL Editor.
+
+alter table usage add column if not exists bonus integer not null default 0;
+
+-- Returns bonus captures earned today
+create or replace function get_bonus(p_user_id uuid, p_date date)
+returns integer
+language sql
+security definer
+set search_path = public
+as $$
+  select coalesce((select bonus from usage where user_id = p_user_id and date = p_date), 0);
+$$;
+
+-- Awards +1 share bonus (max 1 per day — idempotent)
+create or replace function add_share_reward(p_user_id uuid, p_date date)
+returns integer
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare v_bonus integer;
+begin
+  insert into usage (user_id, date, count, bonus)
+  values (p_user_id, p_date, 0, 1)
+  on conflict (user_id, date) do update
+    set bonus = least(usage.bonus + 1, 1)   -- cap at 1 share reward per day
+  returning bonus into v_bonus;
+  return v_bonus;
+end;
+$$;
+
+grant execute on function get_bonus(uuid, date)          to service_role, anon, authenticated;
+grant execute on function add_share_reward(uuid, date)   to service_role, anon, authenticated;

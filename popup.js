@@ -28,6 +28,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   const proBadgeWrap   = document.getElementById('proBadgeWrap');
   const upgradePrompt  = document.getElementById('upgradePrompt');
   const upgradeBtn     = document.getElementById('upgradeBtn');
+  const shareRewardBtn = document.getElementById('shareRewardBtn');
   const selectBtn      = document.getElementById('selectBtn');
 
   // ── History view ────────────────────────────────────────────
@@ -210,6 +211,40 @@ document.addEventListener('DOMContentLoaded', async () => {
   // ────────────────────────────────────────────────────────────
   // Capture flow
   // ────────────────────────────────────────────────────────────
+
+  // ── Share for +1 capture ───────────────────────────────────────────────────
+
+  shareRewardBtn.addEventListener('click', async () => {
+    const shareText = encodeURIComponent(
+      'I\'m using StudySnap to get instant AI answers on any study question 📸⚡\n\nFree to try: https://studysnap-ai.github.io'
+    );
+    chrome.tabs.create({ url: `https://twitter.com/intent/tweet?text=${shareText}` });
+
+    // Credit the user immediately — honor system
+    shareRewardBtn.disabled = true;
+    shareRewardBtn.textContent = 'Claiming…';
+
+    try {
+      const { ss_access_token: token } = await chrome.storage.local.get('ss_access_token');
+      const res  = await fetch(`${BACKEND_URL}/api/reward`, {
+        method:  'POST',
+        headers: { 'Authorization': `Bearer ${token}` },
+      });
+      const data = await res.json();
+
+      if (data.success) {
+        shareRewardBtn.textContent = '✓ +1 capture added!';
+        shareRewardBtn.classList.add('share-claimed');
+        // Refresh usage bar
+        if (token) loadUsage(token);
+        captureBtn.disabled = false;
+      } else {
+        shareRewardBtn.textContent = 'Already claimed today';
+      }
+    } catch {
+      shareRewardBtn.textContent = 'Try again later';
+    }
+  });
 
   // ── Select Area (Pro) ──────────────────────────────────────────────────────
 

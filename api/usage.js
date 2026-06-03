@@ -53,19 +53,22 @@ export default async function handler(req, res) {
     });
     const isPro = status === 'active';
 
-    // Read today's usage via SECURITY DEFINER function (bypasses permission issues)
-    const { data: usedToday } = await supabase.rpc('get_usage', {
-      p_user_id: user.id,
-      p_date:    today,
-    });
+    // Read today's usage and share bonus
+    const [{ data: usedToday }, { data: bonus }] = await Promise.all([
+      supabase.rpc('get_usage', { p_user_id: user.id, p_date: today }),
+      supabase.rpc('get_bonus', { p_user_id: user.id, p_date: today }),
+    ]);
 
-    const count = usedToday ?? 0;
+    const count         = usedToday ?? 0;
+    const bonusCaptures = bonus     ?? 0;
+    const effectiveLimit = FREE_LIMIT + bonusCaptures;
 
     return res.status(200).json({
       isPro,
-      usedToday:  count,
-      limit:      FREE_LIMIT,
-      remaining:  isPro ? 'unlimited' : Math.max(0, FREE_LIMIT - count),
+      usedToday:    count,
+      limit:        effectiveLimit,
+      bonus:        bonusCaptures,
+      remaining:    isPro ? 'unlimited' : Math.max(0, effectiveLimit - count),
       user: {
         id:     user.id,
         email:  user.email,

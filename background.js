@@ -188,24 +188,41 @@ async function runCaptureFlow(sendResponse) {
         try {
           const lines = [];
 
-          // Group inputs by question — mark entire question as answered if any option is selected
-          const inputs = document.querySelectorAll('input[type="radio"], input[type="checkbox"]');
+          // Detect all option elements — native inputs AND ARIA-based custom elements
+          const optionSelector = [
+            'input[type="radio"]', 'input[type="checkbox"]',
+            '[role="radio"]', '[role="checkbox"]',
+            '[role="option"]', '[role="menuitemradio"]',
+          ].join(', ');
+          const inputs = document.querySelectorAll(optionSelector);
           const questionGroups = new Map();
 
           inputs.forEach(input => {
-            const el    = input.closest('li, div, label, tr') || input.parentElement;
-            const cls   = (el?.className || '') + ' ' + (input.className || '');
-            const label =
-              document.querySelector(`label[for="${input.id}"]`)?.innerText ||
-              input.closest('label')?.innerText ||
-              input.parentElement?.innerText || '';
+            const isNativeInput = input instanceof HTMLInputElement;
+            const el  = input.closest('li, div, label, tr') || input.parentElement;
+            const cls = (el?.className || '') + ' ' + (input.className || '');
 
-            const cssSelected  = /selected|active|checked|correct|incorrect|wrong|answered|chosen|marked|correcto|incorrecto|verdadero|falso|acierto|error|bien|mal/i.test(cls);
-            const ariaSelected = input.getAttribute('aria-checked') === 'true' ||
-                                 el?.getAttribute('aria-selected') === 'true';
+            // Get the label text
+            const label = isNativeInput
+              ? (document.querySelector(`label[for="${input.id}"]`)?.innerText ||
+                 input.closest('label')?.innerText ||
+                 input.parentElement?.innerText || '')
+              : (input.innerText || input.textContent || '');
 
-            // Color-based detection: check container AND its children for green/red
-            // (some sites put the colored checkmark in a child element, not on the text)
+            // CSS class / name answered detection
+            const cssSelected = /selected|active|checked|correct|incorrect|wrong|answered|chosen|marked|correcto|incorrecto|verdadero|falso|acierto|error|bien|mal/i.test(cls);
+
+            // ARIA answered detection — covers custom quiz elements
+            const ariaSelected =
+              input.getAttribute('aria-checked')  === 'true' ||
+              input.getAttribute('aria-selected') === 'true' ||
+              input.getAttribute('aria-pressed')  === 'true' ||
+              input.getAttribute('data-selected') === 'true' ||
+              input.getAttribute('data-state') === 'checked' ||
+              input.getAttribute('data-state') === 'selected' ||
+              el?.getAttribute('aria-selected')  === 'true';
+
+            // Color-based detection: check container AND all children for green/red
             let colorAnswered = false;
             try {
               const optEl   = input.closest('li, label, div') || input.parentElement;
@@ -214,13 +231,24 @@ async function runCaptureFlow(sendResponse) {
                 const rgb     = (window.getComputedStyle(el).color.match(/\d+/g) || [0,0,0]).map(Number);
                 const isGreen = rgb[1] > 100 && rgb[1] > rgb[0] * 1.5 && rgb[1] > rgb[2] * 1.5;
                 const isRed   = rgb[0] > 100 && rgb[0] > rgb[1] * 1.5 && rgb[0] > rgb[2] * 1.5;
-                if (isGreen || isRed) { colorAnswered = true; break; }
+                // Also check background color for highlight-based feedback
+                const bg      = (window.getComputedStyle(el).backgroundColor.match(/\d+/g) || [0,0,0]).map(Number);
+                const bgGreen = bg[1] > 100 && bg[1] > bg[0] * 1.4 && bg[1] > bg[2] * 1.4;
+                const bgRed   = bg[0] > 100 && bg[0] > bg[1] * 1.4 && bg[0] > bg[2] * 1.4;
+                if (isGreen || isRed || bgGreen || bgRed) { colorAnswered = true; break; }
               }
             } catch {}
 
-            const isSelected = input.checked || cssSelected || ariaSelected || colorAnswered;
+            const nativeChecked = isNativeInput && input.checked;
+            const isSelected    = nativeChecked || cssSelected || ariaSelected || colorAnswered;
 
-            const groupKey = input.name || input.closest('fieldset, .question, .pregunta, li')?.id || input.parentElement?.parentElement?.id || 'group_' + Math.round(input.getBoundingClientRect().top / 70);
+            // Group by name attr, ARIA group, or position bucket
+            const name     = isNativeInput ? input.name : null;
+            const groupKey = name ||
+              input.closest('fieldset, [role="radiogroup"], [role="group"], .question, .pregunta, li')?.id ||
+              input.parentElement?.parentElement?.id ||
+              'group_' + Math.round(input.getBoundingClientRect().top / 70);
+
             if (!questionGroups.has(groupKey)) questionGroups.set(groupKey, { answered: false, options: [] });
             const g = questionGroups.get(groupKey);
             if (isSelected) g.answered = true;
