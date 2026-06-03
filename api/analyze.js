@@ -58,8 +58,8 @@ OUTPUT — respond ONLY with valid JSON (no markdown, no code fences):
 }
 
 CRITICAL RULES:
-- For mcq and truefalse questions: "answer" MUST be copied EXACTLY from one of the visible options on screen. Never invent an answer that is not listed.
-- For fillin and short questions: "answer" should be a concise text answer.
+- If the question has visible selectable options (radio buttons, checkboxes, A/B/C choices): "answer" MUST be copied EXACTLY from one of those visible options — even if the question is phrased as fill-in-the-blank. Never invent an answer not shown on screen.
+- Only write a free-text answer when there are NO visible options at all.
 - Include one entry per unanswered question, in order of appearance.
 - If no unanswered questions are visible, return { "questions": [] }.
 - The "answer" and "why" fields must always refer to the same question.
