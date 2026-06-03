@@ -7,7 +7,7 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY
 );
 
-const FREE_LIMIT = 10;
+const FREE_LIMIT = 5;
 
 function getUserFromToken(token) {
   try {

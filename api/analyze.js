@@ -15,7 +15,7 @@ const supabase = createClient(
 );
 
 
-const FREE_LIMIT = 10; // captures per day on free tier
+const FREE_LIMIT = 5; // captures per day on free tier
 
 // Decode a Supabase-issued JWT without a network call.
 // The token is already signed by Supabase so we trust its claims.
@@ -185,12 +185,12 @@ export default async function handler(req, res) {
     let result;
     let upgraded = false;
 
-    if (precise) {
-      // Region selection: user wants accuracy — skip mini and go straight to gpt-4o
+    if (isPro || precise) {
+      // Pro users and region captures always get gpt-4o — best answer every time
       result   = await callOpenAI('gpt-4o', base64Image, pageText);
       upgraded = true;
     } else {
-      // Normal capture: start cheap, upgrade only if confidence is low
+      // Free users: start with mini, upgrade if confidence is low
       result = await callOpenAI('gpt-4o-mini', base64Image, pageText);
       const hasLowConfidence = (result.questions ?? []).some(q => (q.confidence ?? 100) < 70);
       if (hasLowConfidence) {
