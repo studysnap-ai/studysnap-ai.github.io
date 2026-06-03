@@ -25,16 +25,18 @@
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif !important;
   font-size:   14px             !important;
   line-height: 1.55             !important;
-  color:       #e8e8f5          !important;
+  color:       #111118          !important;
 
-  /* Visuals */
-  background:    #0f0f1a        !important;
-  border:        1px solid #252540 !important;
+  /* Visuals — frosted glass light theme */
+  background:         rgba(255, 255, 255, 0.92) !important;
+  backdrop-filter:    blur(18px) saturate(1.6)  !important;
+  -webkit-backdrop-filter: blur(18px) saturate(1.6) !important;
+  border:        1px solid rgba(0, 0, 0, 0.08) !important;
   border-radius: 16px           !important;
   box-shadow:
-    0 0 0 1px rgba(99, 102, 241, 0.14),
-    0 8px 32px rgba(0, 0, 0, 0.45),
-    0 32px 80px rgba(0, 0, 0, 0.55) !important;
+    0 0 0 1px rgba(99, 102, 241, 0.10),
+    0 8px 32px rgba(0, 0, 0, 0.12),
+    0 32px 80px rgba(0, 0, 0, 0.10) !important;
 
   /* Enter animation — slides up from the bottom */
   opacity:   0                                    !important;
@@ -66,8 +68,8 @@
   align-items:     center           !important;
   justify-content: space-between    !important;
   padding:         13px 14px        !important;
-  background:      #13131e          !important;
-  border-bottom:   1px solid #1e1e32 !important;
+  background:      rgba(248, 248, 252, 0.95) !important;
+  border-bottom:   1px solid rgba(0, 0, 0, 0.07) !important;
   flex-shrink:     0                !important;
 }
 
@@ -79,13 +81,13 @@
 
 #studysnap-overlay .ss-brand-icon {
   font-size: 16px !important;
-  filter: drop-shadow(0 0 7px rgba(99, 102, 241, 0.8)) !important;
+  filter: drop-shadow(0 0 6px rgba(99, 102, 241, 0.6)) !important;
 }
 
 #studysnap-overlay .ss-brand-name {
-  font-size:   14px   !important;
-  font-weight: 700    !important;
-  color:       #c0c0ee !important;
+  font-size:   14px    !important;
+  font-weight: 700     !important;
+  color:       #4338ca !important;
   letter-spacing: -0.2px !important;
 }
 
@@ -101,9 +103,9 @@
   justify-content: center  !important;
   width:           28px    !important;
   height:          28px    !important;
-  background:      #1e1e32 !important;
+  background:      rgba(0, 0, 0, 0.06) !important;
   border-radius:   8px     !important;
-  color:           #5a5a7a !important;
+  color:           #888899 !important;
   font-size:       20px    !important;
   line-height:     1       !important;
   cursor:          pointer !important;
@@ -111,8 +113,8 @@
 }
 
 #studysnap-overlay .ss-close:hover {
-  background: #2a2a42 !important;
-  color:      #d0d0f0 !important;
+  background: rgba(0, 0, 0, 0.12) !important;
+  color:      #222233             !important;
 }
 
 /* ── Body ────────────────────────────────────────────────────────────────── */
@@ -130,8 +132,8 @@
 #studysnap-overlay .ss-body::-webkit-scrollbar       { width: 4px !important; }
 #studysnap-overlay .ss-body::-webkit-scrollbar-track  { background: transparent !important; }
 #studysnap-overlay .ss-body::-webkit-scrollbar-thumb  {
-  background:    #252540 !important;
-  border-radius: 4px     !important;
+  background:    rgba(0, 0, 0, 0.18) !important;
+  border-radius: 4px                 !important;
 }
 
 /* ── Section (Answer / Why) ──────────────────────────────────────────────── */
@@ -147,7 +149,7 @@
   font-weight:    700   !important;
   letter-spacing: 1.3px !important;
   text-transform: uppercase !important;
-  color:          #44445e !important;
+  color:          #9999aa !important;
   margin:         0       !important;
   padding:        0       !important;
 }
@@ -192,13 +194,13 @@
 #studysnap-overlay .ss-answer-text {
   font-size:   15px    !important;
   font-weight: 650     !important;
-  color:       #f0f0ff !important;
+  color:       #111118 !important;
   line-height: 1.5     !important;
 }
 
 #studysnap-overlay .ss-why-text {
   font-size:   13.5px  !important;
-  color:       #a8a8cc !important;
+  color:       #555566 !important;
   line-height: 1.65    !important;
 }
 
@@ -298,9 +300,9 @@
   font-size:      10px    !important;
   font-weight:    600     !important;
   letter-spacing: 0.3px   !important;
-  color:          #5050a0 !important;
-  background:     rgba(99, 102, 241, 0.08) !important;
-  border:         1px solid #252550        !important;
+  color:          #6366f1 !important;
+  background:     rgba(99, 102, 241, 0.10) !important;
+  border:         1px solid rgba(99,102,241,0.25) !important;
   border-radius:  6px     !important;
   padding:        2px 9px !important;
 }
@@ -385,7 +387,7 @@
   flex-direction: column  !important;
   gap:            8px     !important;
   padding-top:    14px    !important;
-  border-top:     1px solid #1e1e32 !important;
+  border-top:     1px solid rgba(0,0,0,0.07) !important;
 }
 
 #studysnap-overlay .ss-conf-row {
@@ -400,10 +402,10 @@
 }
 
 #studysnap-overlay .ss-conf-track {
-  height:        6px      !important;
-  background:    #1e1e32  !important;
-  border-radius: 100px    !important;
-  overflow:      hidden   !important;
+  height:        6px                    !important;
+  background:    rgba(0, 0, 0, 0.08)   !important;
+  border-radius: 100px                  !important;
+  overflow:      hidden                 !important;
 }
 
 #studysnap-overlay .ss-conf-fill {
@@ -445,18 +447,18 @@
 
 /* Divider between cards */
 #studysnap-overlay .ss-q-divider {
-  border:     none                   !important;
-  border-top: 1px solid #1e1e32      !important;
-  margin:     0                      !important;
+  border:     none                          !important;
+  border-top: 1px solid rgba(0,0,0,0.07)   !important;
+  margin:     0                             !important;
 }
 
 /* "No questions detected" empty state */
 #studysnap-overlay .ss-no-q {
-  text-align:  center   !important;
-  color:       #5a5a7a  !important;
-  font-size:   13px     !important;
-  padding:     24px 0   !important;
-  line-height: 1.6      !important;
+  text-align:  center            !important;
+  color:       #9999aa           !important;
+  font-size:   13px              !important;
+  padding:     24px 0            !important;
+  line-height: 1.6               !important;
 }
 
 /* ── Feedback row (thumbs up / down) ────────────────────────────────────── */
@@ -466,16 +468,16 @@
   align-items:     center           !important;
   justify-content: space-between    !important;
   padding-top:     12px             !important;
-  border-top:      1px solid #1e1e32 !important;
+  border-top:      1px solid rgba(0,0,0,0.07) !important;
   gap:             10px             !important;
 }
 
 #studysnap-overlay .ss-feedback-label {
-  font-size:      11px    !important;
-  color:          #44445e !important;
-  font-weight:    500     !important;
-  transition:     color 0.2s !important;
-  flex:           1       !important;
+  font-size:      11px             !important;
+  color:          #9999aa          !important;
+  font-weight:    500              !important;
+  transition:     color 0.2s       !important;
+  flex:           1                !important;
 }
 
 #studysnap-overlay .ss-feedback-btns {
@@ -496,8 +498,8 @@
   width:           34px    !important;
   height:          34px    !important;
   font-size:       17px    !important;
-  background:      #1a1a2e !important;
-  border:          1px solid #252540 !important;
+  background:      rgba(0, 0, 0, 0.05)       !important;
+  border:          1px solid rgba(0,0,0,0.10) !important;
   border-radius:   8px     !important;
   cursor:          pointer  !important;
   transition: background 0.18s, border-color 0.18s, opacity 0.18s, transform 0.12s !important;
@@ -505,8 +507,8 @@
 }
 
 #studysnap-overlay .ss-thumb:hover {
-  background: #22223a !important;
-  transform:  scale(1.1) !important;
+  background: rgba(0, 0, 0, 0.10) !important;
+  transform:  scale(1.1)          !important;
 }
 
 #studysnap-overlay .ss-thumb:active {

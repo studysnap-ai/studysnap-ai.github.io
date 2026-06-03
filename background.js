@@ -201,7 +201,7 @@ async function runCaptureFlow(sendResponse) {
 
             const isSelected = input.checked || cssSelected || ariaSelected || colorAnswered;
 
-            const groupKey = input.name || input.closest('fieldset, .question, .pregunta, li')?.id || input.parentElement?.parentElement?.id || 'group_' + Math.round(input.getBoundingClientRect().top / 200);
+            const groupKey = input.name || input.closest('fieldset, .question, .pregunta, li')?.id || input.parentElement?.parentElement?.id || 'group_' + Math.round(input.getBoundingClientRect().top / 70);
             if (!questionGroups.has(groupKey)) questionGroups.set(groupKey, { answered: false, options: [] });
             const g = questionGroups.get(groupKey);
             if (isSelected) g.answered = true;
