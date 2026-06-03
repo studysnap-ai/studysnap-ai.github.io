@@ -3,8 +3,9 @@
 // Users never need their own API key — we handle it here.
 //
 // Smart model routing:
-//   Regular questions → gpt-4o-mini  (~$0.0006/capture, fast)
-//   Writing assignments → gpt-4o    (~$0.01/capture, better quality)
+//   All questions     → gpt-4o-mini first  (fast, ~$0.001/capture)
+//   Low confidence    → retry with gpt-4o  (accurate, ~$0.01/capture)
+//   Threshold: any question confidence < 70 triggers the upgrade
 
 import { createClient } from '@supabase/supabase-js';
 
@@ -179,11 +180,19 @@ export default async function handler(req, res) {
       if (rpcError) console.error(`[SS] rpc_fail: ${rpcError.message}`);
     }
 
-    // ── AI call ──────────────────────────────────────────────────────────────
+    // ── AI call — smart model routing ────────────────────────────────────────
+    // Step 1: fast + cheap model handles the majority of questions well
     const base64Image = imageDataUrl.replace(/^data:image\/\w+;base64,/, '');
-    const result      = await callOpenAI('gpt-4o-mini', base64Image, pageText);
+    let result = await callOpenAI('gpt-4o-mini', base64Image, pageText);
 
-    return res.status(200).json({ ...result, isPro });
+    // Step 2: if any question came back with low confidence (<70%), the
+    // mini model was uncertain — upgrade to gpt-4o for the full request
+    const hasLowConfidence = (result.questions ?? []).some(q => (q.confidence ?? 100) < 70);
+    if (hasLowConfidence) {
+      result = await callOpenAI('gpt-4o', base64Image, pageText);
+    }
+
+    return res.status(200).json({ ...result, isPro, upgraded: hasLowConfidence });
 
   } catch (err) {
     console.error('[StudySnap API]', err.message);
