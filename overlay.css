@@ -310,17 +310,18 @@
 /* Answer text when the student needs to TYPE it */
 #studysnap-overlay .ss-answer-type {
   background:    rgba(99, 102, 241, 0.07) !important;
-  border:        1px solid #2a2a50        !important;
+  border:        1px solid rgba(99,102,241,0.20) !important;
   border-radius: 8px                      !important;
   padding:       8px 10px                 !important;
   font-family:   'SF Mono', 'Fira Code', 'Menlo', monospace !important;
   font-size:     14px                     !important;
   letter-spacing: 0.1px                  !important;
+  color:         #111118                  !important;
 }
 
 /* Answer text when the student needs to SELECT an option */
 #studysnap-overlay .ss-answer-select {
-  color: #c8c8ff !important;
+  color: #111118 !important;
 }
 
 /* ── Deep Explanation expand button ─────────────────────────────────────── */

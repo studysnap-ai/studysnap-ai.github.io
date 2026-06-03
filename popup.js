@@ -141,8 +141,10 @@ document.addEventListener('DOMContentLoaded', async () => {
       }
 
       if (data.isPro) {
-        usageWrap.hidden    = true;
-        proBadgeWrap.hidden = false;
+        usageWrap.hidden      = true;
+        proBadgeWrap.hidden   = false;
+        upgradePrompt.hidden  = true;
+        captureBtn.disabled   = false;
       } else {
         const used  = data.usedToday ?? 0;
         const limit = data.limit     ?? 10;
