@@ -19,10 +19,25 @@ const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBh
 
 // ── Message listener ──────────────────────────────────────────
 
+// Resolves the pending region selection promise (set by runSelectionFlow)
+let pendingSelectionResolve = null;
+
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.action === 'captureAndAnalyze') {
     runCaptureFlow(sendResponse);
-    return true; // keep channel open for async response
+    return true;
+  }
+  if (message.action === 'captureSelection') {
+    runSelectionFlow(sendResponse);
+    return true;
+  }
+  if (message.action === 'selectionComplete') {
+    pendingSelectionResolve?.(message.rect);
+    return false;
+  }
+  if (message.action === 'selectionCancelled') {
+    pendingSelectionResolve?.(null);
+    return false;
   }
   if (message.action === 'getValidToken') {
     getValidToken().then(token => sendResponse({ token }));
@@ -189,14 +204,18 @@ async function runCaptureFlow(sendResponse) {
             const ariaSelected = input.getAttribute('aria-checked') === 'true' ||
                                  el?.getAttribute('aria-selected') === 'true';
 
-            // Color-based detection: green or red text means answered
+            // Color-based detection: check container AND its children for green/red
+            // (some sites put the colored checkmark in a child element, not on the text)
             let colorAnswered = false;
             try {
-              const optEl = input.closest('li, label, div') || input.parentElement;
-              const rgb   = (window.getComputedStyle(optEl).color.match(/\d+/g) || [0,0,0]).map(Number);
-              const isGreen = rgb[1] > 100 && rgb[1] > rgb[0] * 1.5 && rgb[1] > rgb[2] * 1.5;
-              const isRed   = rgb[0] > 100 && rgb[0] > rgb[1] * 1.5 && rgb[0] > rgb[2] * 1.5;
-              colorAnswered = isGreen || isRed;
+              const optEl   = input.closest('li, label, div') || input.parentElement;
+              const toCheck = [optEl, ...Array.from(optEl?.querySelectorAll('*') || [])].slice(0, 20);
+              for (const el of toCheck) {
+                const rgb     = (window.getComputedStyle(el).color.match(/\d+/g) || [0,0,0]).map(Number);
+                const isGreen = rgb[1] > 100 && rgb[1] > rgb[0] * 1.5 && rgb[1] > rgb[2] * 1.5;
+                const isRed   = rgb[0] > 100 && rgb[0] > rgb[1] * 1.5 && rgb[0] > rgb[2] * 1.5;
+                if (isGreen || isRed) { colorAnswered = true; break; }
+              }
             } catch {}
 
             const isSelected = input.checked || cssSelected || ariaSelected || colorAnswered;
@@ -275,6 +294,81 @@ async function runCaptureFlow(sendResponse) {
 
     sendResponse({ success: false, error: friendlyError(err.message) });
   }
+}
+
+// ── Pro: region selection capture ────────────────────────────
+
+async function runSelectionFlow(sendResponse) {
+  try {
+    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+    if (!tab?.id) return sendResponse({ success: false, error: 'No active tab found.' });
+
+    // Hide any existing overlay so it doesn't interfere with selection
+    await chrome.tabs.sendMessage(tab.id, { action: 'hideOverlay' }).catch(() => {});
+
+    // Inject the selection crosshair UI
+    await chrome.scripting.executeScript({ target: { tabId: tab.id }, files: ['selector.js'] });
+
+    // Wait for the user to draw a rectangle (or cancel)
+    const rect = await new Promise((resolve) => {
+      pendingSelectionResolve = resolve;
+      setTimeout(() => resolve(null), 60000); // 60s timeout
+    });
+    pendingSelectionResolve = null;
+
+    if (!rect) return sendResponse({ success: false, error: 'Selection cancelled.' });
+
+    // Small pause so the selector overlay is fully gone before capturing
+    await delay(120);
+
+    // Capture the full visible tab, then crop to the selected region
+    const fullScreenshot  = await chrome.tabs.captureVisibleTab(null, { format: 'png' });
+    const croppedDataUrl  = await cropScreenshot(fullScreenshot, rect);
+
+    // Send to backend (no DOM text extraction — the region is already focused)
+    const result = await callBackendAPI(croppedDataUrl, null);
+
+    const now       = Date.now();
+    const questions = result.questions ?? [];
+    const entryIds  = questions.map((_, i) => now + i);
+
+    await chrome.scripting.insertCSS({ target: { tabId: tab.id }, files: ['overlay.css'] });
+    await chrome.scripting.executeScript({ target: { tabId: tab.id }, files: ['content.js'] });
+    await delay(150);
+
+    await chrome.tabs.sendMessage(tab.id, { action: 'showOverlay', data: { questions, entryIds } });
+    questions.forEach((q, i) => saveToHistory(q, entryIds[i]));
+
+    sendResponse({ success: true });
+
+  } catch (err) {
+    console.error('[StudySnap] Selection flow error:', err);
+    if (err.limitReached) return sendResponse({ success: false, error: err.message, limitReached: true });
+    sendResponse({ success: false, error: friendlyError(err.message) });
+  }
+}
+
+// Crops a PNG data URL to the given pixel rectangle using OffscreenCanvas
+async function cropScreenshot(dataUrl, rect) {
+  const blob   = await fetch(dataUrl).then(r => r.blob());
+  const bitmap = await createImageBitmap(blob);
+
+  const x = Math.max(0, Math.min(rect.x, bitmap.width  - 1));
+  const y = Math.max(0, Math.min(rect.y, bitmap.height - 1));
+  const w = Math.min(rect.width,  bitmap.width  - x);
+  const h = Math.min(rect.height, bitmap.height - y);
+
+  const canvas = new OffscreenCanvas(w, h);
+  canvas.getContext('2d').drawImage(bitmap, x, y, w, h, 0, 0, w, h);
+
+  const cropped  = await canvas.convertToBlob({ type: 'image/png' });
+  const ab       = await cropped.arrayBuffer();
+  const uint8    = new Uint8Array(ab);
+  let binary = '';
+  for (let i = 0; i < uint8.length; i += 8192) {
+    binary += String.fromCharCode(...uint8.subarray(i, i + 8192));
+  }
+  return `data:image/png;base64,${btoa(binary)}`;
 }
 
 // ── Token refresh ─────────────────────────────────────────────

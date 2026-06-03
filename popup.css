@@ -176,6 +176,33 @@ body {
 
 .btn-icon { font-size: 17px; }
 
+/* ── Pro: Select Area button ─────────────────────────────────── */
+
+.select-btn {
+  width: 100%;
+  padding: 9px 16px;
+  background: none;
+  border: 1.5px dashed rgba(99, 102, 241, 0.40);
+  border-radius: 10px;
+  color: #6366f1;
+  font-size: 13px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  letter-spacing: 0.1px;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+}
+
+.select-btn:hover:not(:disabled) {
+  background: rgba(99, 102, 241, 0.07);
+  border-color: #6366f1;
+}
+
+.select-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
 /* ── Loading ─────────────────────────────────────────────────── */
 
 .loading {

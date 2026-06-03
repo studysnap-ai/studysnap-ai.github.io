@@ -28,6 +28,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   const proBadgeWrap   = document.getElementById('proBadgeWrap');
   const upgradePrompt  = document.getElementById('upgradePrompt');
   const upgradeBtn     = document.getElementById('upgradeBtn');
+  const selectBtn      = document.getElementById('selectBtn');
 
   // ── History view ────────────────────────────────────────────
   const historyBackBtn  = document.getElementById('historyBackBtn');
@@ -145,6 +146,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         proBadgeWrap.hidden   = false;
         upgradePrompt.hidden  = true;
         captureBtn.disabled   = false;
+        selectBtn.hidden      = false;   // show Select Area for Pro users
       } else {
         const used  = data.usedToday ?? 0;
         const limit = data.limit     ?? 10;
@@ -208,6 +210,21 @@ document.addEventListener('DOMContentLoaded', async () => {
   // ────────────────────────────────────────────────────────────
   // Capture flow
   // ────────────────────────────────────────────────────────────
+
+  // ── Select Area (Pro) ──────────────────────────────────────────────────────
+
+  selectBtn.addEventListener('click', () => {
+    setLoading(true);
+    clearStatus();
+    window.close(); // close popup so user can draw on the page freely
+
+    chrome.runtime.sendMessage({ action: 'captureSelection' }, (response) => {
+      if (chrome.runtime.lastError || !response?.success) {
+        // Popup is closed — errors are silent here; user sees nothing
+        // Only handle limitReached which might need a notification (future work)
+      }
+    });
+  });
 
   captureBtn.addEventListener('click', () => {
     setLoading(true);
