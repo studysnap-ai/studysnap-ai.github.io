@@ -57,10 +57,13 @@ OUTPUT — respond ONLY with valid JSON (no markdown, no code fences):
   ]
 }
 
-Include one entry per unanswered question, in order of appearance.
-If no unanswered questions are visible, return { "questions": [] }.
-The "answer" and "why" fields must always refer to the same question.
-Plain text answers only (no HTML) unless it is a writing/essay assignment.`;
+CRITICAL RULES:
+- For mcq and truefalse questions: "answer" MUST be copied EXACTLY from one of the visible options on screen. Never invent an answer that is not listed.
+- For fillin and short questions: "answer" should be a concise text answer.
+- Include one entry per unanswered question, in order of appearance.
+- If no unanswered questions are visible, return { "questions": [] }.
+- The "answer" and "why" fields must always refer to the same question.
+- Plain text answers only (no HTML) unless it is a writing/essay assignment.`;
 
 // ── OpenAI helper ────────────────────────────────────────────────────────────
 
