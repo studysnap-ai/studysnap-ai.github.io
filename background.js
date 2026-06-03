@@ -185,10 +185,21 @@ async function runCaptureFlow(sendResponse) {
               input.closest('label')?.innerText ||
               input.parentElement?.innerText || '';
 
-            const cssSelected  = /selected|active|checked|correct|incorrect|wrong|answered|chosen|marked/i.test(cls);
+            const cssSelected  = /selected|active|checked|correct|incorrect|wrong|answered|chosen|marked|correcto|incorrecto|verdadero|falso|acierto|error|bien|mal/i.test(cls);
             const ariaSelected = input.getAttribute('aria-checked') === 'true' ||
                                  el?.getAttribute('aria-selected') === 'true';
-            const isSelected   = input.checked || cssSelected || ariaSelected;
+
+            // Color-based detection: green or red text means answered
+            let colorAnswered = false;
+            try {
+              const optEl = input.closest('li, label, div') || input.parentElement;
+              const rgb   = (window.getComputedStyle(optEl).color.match(/\d+/g) || [0,0,0]).map(Number);
+              const isGreen = rgb[1] > 100 && rgb[1] > rgb[0] * 1.5 && rgb[1] > rgb[2] * 1.5;
+              const isRed   = rgb[0] > 100 && rgb[0] > rgb[1] * 1.5 && rgb[0] > rgb[2] * 1.5;
+              colorAnswered = isGreen || isRed;
+            } catch {}
+
+            const isSelected = input.checked || cssSelected || ariaSelected || colorAnswered;
 
             const groupKey = input.name || input.closest('fieldset, .question, .pregunta, li')?.id || input.parentElement?.parentElement?.id || 'group_' + Math.round(input.getBoundingClientRect().top / 200);
             if (!questionGroups.has(groupKey)) questionGroups.set(groupKey, { answered: false, options: [] });
