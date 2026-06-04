@@ -55,6 +55,58 @@ export default async function handler(req, res) {
         }, { onConflict: 'user_id' });
 
         console.log(`[StudySnap] Pro activated for user ${userId}`);
+
+        // ── Referral conversion: check if this new Pro user was referred ──────
+        const { data: referral } = await supabase
+          .from('referrals')
+          .select('referrer_id, converted_to_pro')
+          .eq('referred_id', userId)
+          .single();
+
+        if (referral && !referral.converted_to_pro) {
+          // Mark this referral as paid
+          await supabase
+            .from('referrals')
+            .update({ converted_to_pro: true, converted_at: new Date().toISOString() })
+            .eq('referred_id', userId);
+
+          // Count how many paying referrals the referrer now has
+          const { data: payingCount } = await supabase.rpc('get_paying_referral_count', {
+            p_user_id: referral.referrer_id,
+          });
+
+          // Every 3 paying referrals = $1 off coupon for the referrer
+          if (payingCount && payingCount % 3 === 0) {
+            try {
+              const coupon = await stripe.coupons.create({
+                amount_off:      100, // $1 in cents
+                currency:        'usd',
+                duration:        'once',
+                max_redemptions: 1,
+                metadata:        { referrer_id: referral.referrer_id },
+              });
+
+              await supabase.from('referral_credits').insert({
+                user_id:          referral.referrer_id,
+                stripe_coupon_id: coupon.id,
+              });
+
+              console.log(`[StudySnap] $1 referral credit awarded to ${referral.referrer_id}`);
+            } catch (couponErr) {
+              console.error('[StudySnap] Failed to create referral coupon:', couponErr.message);
+            }
+          }
+        }
+
+        // ── Mark coupon as used if one was applied in this checkout ───────────
+        const appliedCoupon = session.total_details?.breakdown?.discounts?.[0]?.discount?.coupon?.id;
+        if (appliedCoupon) {
+          await supabase.rpc('use_referral_credit', {
+            p_user_id:   userId,
+            p_coupon_id: appliedCoupon,
+          });
+        }
+
         break;
       }
 

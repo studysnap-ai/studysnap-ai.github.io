@@ -26,25 +26,29 @@ export default async function handler(req, res) {
 
     const user = data.user;
 
-    // Create Stripe checkout session
-    const session = await stripe.checkout.sessions.create({
-      mode: 'subscription',
-      payment_method_types: ['card'],
-      customer_email: user.email,
-      line_items: [
-        {
-          price: process.env.STRIPE_PRO_PRICE_ID, // set in Vercel env
-          quantity: 1,
-        },
-      ],
-      success_url: `https://studysnap-ai.github.io?upgraded=true`,
-      cancel_url:  `https://studysnap-ai.github.io?upgraded=false`,
-      metadata: {
-        user_id: user.id,
-      },
+    // Check if user has an earned referral discount ($1 off first month)
+    const { data: couponId } = await supabase.rpc('get_pending_referral_coupon', {
+      p_user_id: user.id,
     });
 
-    return res.status(200).json({ url: session.url });
+    const sessionParams = {
+      mode:                 'subscription',
+      payment_method_types: ['card'],
+      customer_email:       user.email,
+      line_items: [{ price: process.env.STRIPE_PRO_PRICE_ID, quantity: 1 }],
+      success_url: `https://studysnap-ai.github.io?upgraded=true`,
+      cancel_url:  `https://studysnap-ai.github.io?upgraded=false`,
+      metadata:    { user_id: user.id },
+    };
+
+    // Apply referral coupon — $1 off first month
+    if (couponId) {
+      sessionParams.discounts = [{ coupon: couponId }];
+      console.log(`[StudySnap] Applying referral coupon ${couponId} for user ${user.id}`);
+    }
+
+    const session = await stripe.checkout.sessions.create(sessionParams);
+    return res.status(200).json({ url: session.url, hasCoupon: Boolean(couponId) });
 
   } catch (err) {
     console.error('[StudySnap API] subscribe error:', err);

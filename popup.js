@@ -152,11 +152,14 @@ document.addEventListener('DOMContentLoaded', async () => {
       }
 
       if (data.isPro) {
+        const used = data.usedThisMonth ?? 0;
+        proBadgeWrap.querySelector('.pro-badge').textContent =
+          `⚡ Pro — ${used} captures this month`;
         usageWrap.hidden      = true;
         proBadgeWrap.hidden   = false;
         upgradePrompt.hidden  = true;
         captureBtn.disabled   = false;
-        selectBtn.hidden      = false;   // show Select Area for Pro users
+        selectBtn.hidden      = false;
       } else {
         const used  = data.usedToday ?? 0;
         const limit = data.limit     ?? 10;
@@ -398,16 +401,24 @@ document.addEventListener('DOMContentLoaded', async () => {
       const refUrl    = `https://studysnap-ai.github.io?ref=${shortCode}`;
       referralLink.textContent = refUrl;
 
-      // Fetch referral count
+      // Fetch referral stats
       try {
-        const res  = await fetch(`${BACKEND_URL}/api/referrals`, {
+        const refRes  = await fetch(`${BACKEND_URL}/api/referrals`, {
           headers: { 'Authorization': `Bearer ${token}` },
         });
-        if (res.ok) {
-          const data  = await res.json();
-          const count = data.count ?? 0;
-          const next  = 3 - (count % 3);
-          referralProgress.textContent = `${count} referred · ${next} until +1`;
+        if (refRes.ok) {
+          const refData = await refRes.json();
+          const paying  = refData.paying ?? 0;
+          const next    = refData.nextMilestone ?? 3;
+
+          if (refData.hasPendingDiscount) {
+            referralProgress.textContent = '🎉 $1 discount ready!';
+            referralProgress.style.background = 'rgba(34,197,94,0.12)';
+            referralProgress.style.borderColor = 'rgba(34,197,94,0.3)';
+            referralProgress.style.color = '#22c55e';
+          } else {
+            referralProgress.textContent = `${paying}/3 paying · ${next} to go`;
+          }
         }
       } catch { /* silent */ }
     }

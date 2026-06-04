@@ -53,22 +53,25 @@ export default async function handler(req, res) {
     });
     const isPro = status === 'active';
 
-    // Read today's usage and share bonus
-    const [{ data: usedToday }, { data: bonus }] = await Promise.all([
-      supabase.rpc('get_usage', { p_user_id: user.id, p_date: today }),
-      supabase.rpc('get_bonus', { p_user_id: user.id, p_date: today }),
+    const monthStart = today.slice(0, 7) + '-01';
+
+    const [{ data: usedToday }, { data: bonus }, { data: monthlyUsed }] = await Promise.all([
+      supabase.rpc('get_usage',         { p_user_id: user.id, p_date: today }),
+      supabase.rpc('get_bonus',         { p_user_id: user.id, p_date: today }),
+      supabase.rpc('get_monthly_usage', { p_user_id: user.id, p_month_start: monthStart }),
     ]);
 
-    const count         = usedToday ?? 0;
-    const bonusCaptures = bonus     ?? 0;
+    const count          = usedToday  ?? 0;
+    const bonusCaptures  = bonus      ?? 0;
     const effectiveLimit = FREE_LIMIT + bonusCaptures;
 
     return res.status(200).json({
       isPro,
       usedToday:    count,
-      limit:        effectiveLimit,
+      usedThisMonth: monthlyUsed ?? 0,
+      limit:        isPro ? null : effectiveLimit,
       bonus:        bonusCaptures,
-      remaining:    isPro ? 'unlimited' : Math.max(0, effectiveLimit - count),
+      remaining:    isPro ? null : Math.max(0, effectiveLimit - count),
       user: {
         id:     user.id,
         email:  user.email,

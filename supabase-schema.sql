@@ -171,6 +171,68 @@ begin
 end;
 $$;
 
-grant execute on function get_referral_count(uuid)              to service_role, anon, authenticated;
-grant execute on function get_referral_bonus(uuid)              to service_role, anon, authenticated;
-grant execute on function claim_referral(uuid, text)            to service_role, anon, authenticated;
+grant execute on function get_referral_count(uuid)   to service_role, anon, authenticated;
+grant execute on function get_referral_bonus(uuid)   to service_role, anon, authenticated;
+grant execute on function claim_referral(uuid, text) to service_role, anon, authenticated;
+
+-- ── Pro monthly cap (700 captures) ────────────────────────────────────────
+-- Sums all daily usage rows since the start of the current month.
+
+create or replace function get_monthly_usage(p_user_id uuid, p_month_start date)
+returns integer
+language sql security definer set search_path = public
+as $$
+  select coalesce(sum(count), 0)::integer
+  from usage
+  where user_id = p_user_id and date >= p_month_start;
+$$;
+
+grant execute on function get_monthly_usage(uuid, date) to service_role, anon, authenticated;
+
+-- ── Referral discount credits ──────────────────────────────────────────────
+-- Earned when 3 of your referrals convert to paying Pro users.
+-- Each credit stores a unique Stripe coupon ID for $1 off first month.
+
+alter table referrals add column if not exists converted_to_pro boolean default false;
+alter table referrals add column if not exists converted_at      timestamptz;
+
+create table if not exists referral_credits (
+  id               uuid primary key default gen_random_uuid(),
+  user_id          uuid references auth.users(id) on delete cascade not null,
+  stripe_coupon_id text not null,
+  used             boolean default false,
+  created_at       timestamptz default now()
+);
+
+-- Returns an unused Stripe coupon ID for this user (null if none)
+create or replace function get_pending_referral_coupon(p_user_id uuid)
+returns text
+language sql security definer set search_path = public
+as $$
+  select stripe_coupon_id from referral_credits
+  where user_id = p_user_id and used = false
+  order by created_at asc limit 1;
+$$;
+
+-- Marks a coupon as used after checkout completes
+create or replace function use_referral_credit(p_user_id uuid, p_coupon_id text)
+returns void
+language sql security definer set search_path = public
+as $$
+  update referral_credits set used = true
+  where user_id = p_user_id and stripe_coupon_id = p_coupon_id;
+$$;
+
+-- Returns count of paying referrals for a user
+create or replace function get_paying_referral_count(p_user_id uuid)
+returns integer
+language sql security definer set search_path = public
+as $$
+  select count(*)::integer from referrals
+  where referrer_id = p_user_id and converted_to_pro = true;
+$$;
+
+grant execute on function get_pending_referral_coupon(uuid)      to service_role, anon, authenticated;
+grant execute on function use_referral_credit(uuid, text)        to service_role, anon, authenticated;
+grant execute on function get_paying_referral_count(uuid)        to service_role, anon, authenticated;
+grant execute on function get_monthly_usage(uuid, date)          to service_role, anon, authenticated;

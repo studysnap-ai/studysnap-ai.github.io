@@ -142,26 +142,42 @@ export default async function handler(req, res) {
       user = getUserFromToken(token);
 
       if (user) {
-        // Check Pro subscription via SECURITY DEFINER RPC (bypasses RLS)
-        const { data: status } = await supabase.rpc('get_subscription', {
-          p_user_id: user.id,
-        });
+        const { data: status } = await supabase.rpc('get_subscription', { p_user_id: user.id });
         isPro = status === 'active';
       }
     }
 
-    // ── Usage check: enforce free tier limit (including share bonus) ─────────
+    // ── Pro monthly cap ───────────────────────────────────────────────────────
+    const PRO_MONTHLY_LIMIT = 700;
+    if (user && isPro) {
+      const today      = new Date().toISOString().split('T')[0];
+      const monthStart = today.slice(0, 7) + '-01'; // YYYY-MM-01
+      const { data: monthlyCount } = await supabase.rpc('get_monthly_usage', {
+        p_user_id:    user.id,
+        p_month_start: monthStart,
+      });
+      if ((monthlyCount ?? 0) >= PRO_MONTHLY_LIMIT) {
+        const nextMonth = new Date();
+        nextMonth.setMonth(nextMonth.getMonth() + 1, 1);
+        const resetDate = nextMonth.toLocaleDateString('en-US', { month: 'long', day: 'numeric' });
+        return res.status(429).json({
+          error: `Monthly capture limit reached. Your captures reset on ${resetDate}.`,
+          limitReached: true,
+        });
+      }
+    }
+
+    // ── Free tier limit ───────────────────────────────────────────────────────
     if (user && !isPro) {
       const today = new Date().toISOString().split('T')[0];
 
-      const [{ data: usageCount }, { data: shareBonus }, { data: refBonus }] = await Promise.all([
-        supabase.rpc('get_usage',          { p_user_id: user.id, p_date: today }),
-        supabase.rpc('get_bonus',          { p_user_id: user.id, p_date: today }),
-        supabase.rpc('get_referral_bonus', { p_user_id: user.id }),
+      const [{ data: usageCount }, { data: shareBonus }] = await Promise.all([
+        supabase.rpc('get_usage', { p_user_id: user.id, p_date: today }),
+        supabase.rpc('get_bonus', { p_user_id: user.id, p_date: today }),
       ]);
 
       const todayCount     = usageCount ?? 0;
-      const effectiveLimit = FREE_LIMIT + (shareBonus ?? 0) + (refBonus ?? 0);
+      const effectiveLimit = FREE_LIMIT + (shareBonus ?? 0);
 
       if (todayCount >= effectiveLimit) {
         return res.status(429).json({

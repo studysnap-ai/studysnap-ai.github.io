@@ -39,14 +39,17 @@ export default async function handler(req, res) {
 
   // ── GET: return referral count + bonus ────────────────────────────────────
   if (req.method === 'GET') {
-    const [{ data: count }, { data: bonus }] = await Promise.all([
-      supabase.rpc('get_referral_count', { p_user_id: user.id }),
-      supabase.rpc('get_referral_bonus', { p_user_id: user.id }),
+    const [{ data: total }, { data: paying }, { data: pendingCoupon }] = await Promise.all([
+      supabase.rpc('get_referral_count',         { p_user_id: user.id }),
+      supabase.rpc('get_paying_referral_count',  { p_user_id: user.id }),
+      supabase.rpc('get_pending_referral_coupon',{ p_user_id: user.id }),
     ]);
+    const payingCount = paying ?? 0;
     return res.status(200).json({
-      count:      count  ?? 0,
-      bonus:      bonus  ?? 0,
-      nextMilestone: 3 - ((count ?? 0) % 3),
+      total:         total        ?? 0,
+      paying:        payingCount,
+      nextMilestone: 3 - (payingCount % 3),
+      hasPendingDiscount: Boolean(pendingCoupon),
     });
   }
 
