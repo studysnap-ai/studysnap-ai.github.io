@@ -140,6 +140,20 @@ async function signInWithGoogle(sendResponse) {
       ss_user:          user,
     });
 
+    // If a referral code was entered on the login screen, claim it now
+    const { pending_referral_code: refCode } = await chrome.storage.local.get('pending_referral_code');
+    if (refCode) {
+      chrome.storage.local.remove('pending_referral_code');
+      fetch(`${BACKEND_URL}/api/referrals`, {
+        method:  'POST',
+        headers: {
+          'Content-Type':  'application/json',
+          'Authorization': `Bearer ${access_token}`,
+        },
+        body: JSON.stringify({ referralCode: refCode }),
+      }).catch(() => {});
+    }
+
     sendResponse({ success: true, user });
 
   } catch (err) {

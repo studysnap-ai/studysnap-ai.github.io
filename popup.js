@@ -11,8 +11,9 @@ document.addEventListener('DOMContentLoaded', async () => {
   const viewAccount = document.getElementById('viewAccount');
 
   // ── Login view ──────────────────────────────────────────────
-  const signInBtn   = document.getElementById('signInBtn');
-  const loginError  = document.getElementById('loginError');
+  const signInBtn    = document.getElementById('signInBtn');
+  const loginError   = document.getElementById('loginError');
+  const refCodeInput = document.getElementById('refCodeInput');
 
   // ── Main view ───────────────────────────────────────────────
   const captureBtn     = document.getElementById('captureBtn');
@@ -26,10 +27,14 @@ document.addEventListener('DOMContentLoaded', async () => {
   const usageCount     = document.getElementById('usageCount');
   const usageFill      = document.getElementById('usageFill');
   const proBadgeWrap   = document.getElementById('proBadgeWrap');
-  const upgradePrompt  = document.getElementById('upgradePrompt');
-  const upgradeBtn     = document.getElementById('upgradeBtn');
-  const shareRewardBtn = document.getElementById('shareRewardBtn');
-  const selectBtn      = document.getElementById('selectBtn');
+  const upgradePrompt   = document.getElementById('upgradePrompt');
+  const upgradeBtn      = document.getElementById('upgradeBtn');
+  const shareToggleBtn  = document.getElementById('shareToggleBtn');
+  const sharePlatforms  = document.getElementById('sharePlatforms');
+  const selectBtn       = document.getElementById('selectBtn');
+  const referralProgress = document.getElementById('referralProgress');
+  const referralLink     = document.getElementById('referralLink');
+  const referralCopyBtn  = document.getElementById('referralCopyBtn');
 
   // ── History view ────────────────────────────────────────────
   const historyBackBtn  = document.getElementById('historyBackBtn');
@@ -95,6 +100,10 @@ document.addEventListener('DOMContentLoaded', async () => {
     signInBtn.disabled = true;
     signInBtn.querySelector('span').textContent = 'Opening…';
     loginError.hidden = true;
+
+    // Store referral code so background.js can claim it after sign-in
+    const code = refCodeInput?.value?.trim();
+    if (code) await chrome.storage.local.set({ pending_referral_code: code });
 
     chrome.runtime.sendMessage({ action: 'signIn' }, async (response) => {
       signInBtn.disabled = false;
@@ -212,39 +221,65 @@ document.addEventListener('DOMContentLoaded', async () => {
   // Capture flow
   // ────────────────────────────────────────────────────────────
 
-  // ── Share for +1 capture ───────────────────────────────────────────────────
+  // ── Share for +1 — multi-platform ─────────────────────────────────────────
 
-  shareRewardBtn.addEventListener('click', async () => {
-    const shareText = encodeURIComponent(
-      'I\'m using StudySnap to get instant AI answers on any study question 📸⚡\n\nFree to try: https://studysnap-ai.github.io'
-    );
-    chrome.tabs.create({ url: `https://twitter.com/intent/tweet?text=${shareText}` });
+  const SHARE_URL  = 'https://studysnap-ai.github.io';
+  const SHARE_TEXT = 'I\'m using StudySnap to get instant AI answers on any study question 📸⚡\n\nFree to try:';
 
-    // Credit the user immediately — honor system
-    shareRewardBtn.disabled = true;
-    shareRewardBtn.textContent = 'Claiming…';
+  shareToggleBtn.addEventListener('click', () => {
+    const open = sharePlatforms.hidden;
+    sharePlatforms.hidden = !open;
+    shareToggleBtn.classList.toggle('share-open', open);
+  });
 
+  sharePlatforms.addEventListener('click', async (e) => {
+    const btn = e.target.closest('.platform-btn');
+    if (!btn) return;
+
+    const platform = btn.dataset.platform;
+    const { ss_user: user } = await chrome.storage.local.get('ss_user');
+    const refParam = user?.id ? `?ref=${user.id.slice(0, 8)}` : '';
+    const url      = SHARE_URL + refParam;
+    const text     = encodeURIComponent(`${SHARE_TEXT} ${url}`);
+
+    const shareUrls = {
+      twitter:  `https://twitter.com/intent/tweet?text=${text}`,
+      whatsapp: `https://wa.me/?text=${text}`,
+      facebook: `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}`,
+    };
+
+    if (platform === 'copy') {
+      await navigator.clipboard.writeText(`${SHARE_TEXT} ${url}`);
+      btn.textContent = '✓ Copied!';
+      setTimeout(() => { btn.innerHTML = '📋 Copy link <span class="platform-note">(Instagram · TikTok)</span>'; }, 2000);
+    } else {
+      chrome.tabs.create({ url: shareUrls[platform] });
+    }
+
+    // Credit +1 immediately (honor system) — only once per day
+    await claimShareReward();
+  });
+
+  async function claimShareReward() {
     try {
       const { ss_access_token: token } = await chrome.storage.local.get('ss_access_token');
+      if (!token) return;
       const res  = await fetch(`${BACKEND_URL}/api/reward`, {
         method:  'POST',
         headers: { 'Authorization': `Bearer ${token}` },
       });
       const data = await res.json();
-
       if (data.success) {
-        shareRewardBtn.textContent = '✓ +1 capture added!';
-        shareRewardBtn.classList.add('share-claimed');
-        // Refresh usage bar
+        shareToggleBtn.textContent = '✓ +1 capture added!';
+        shareToggleBtn.classList.add('share-claimed');
+        sharePlatforms.hidden = true;
+        captureBtn.disabled   = false;
         if (token) loadUsage(token);
-        captureBtn.disabled = false;
       } else {
-        shareRewardBtn.textContent = 'Already claimed today';
+        shareToggleBtn.textContent = '📢 Already shared today';
       }
-    } catch {
-      shareRewardBtn.textContent = 'Try again later';
-    }
-  });
+    } catch { /* silent */ }
+  }
 
   // ── Select Area (Pro) ──────────────────────────────────────────────────────
 
@@ -305,6 +340,15 @@ document.addEventListener('DOMContentLoaded', async () => {
   // Account view
   // ────────────────────────────────────────────────────────────
 
+  // ── Referral copy button ───────────────────────────────────────────────────
+  referralCopyBtn.addEventListener('click', async () => {
+    const text = referralLink.textContent;
+    if (!text || text === 'Loading…') return;
+    await navigator.clipboard.writeText(text);
+    referralCopyBtn.textContent = '✓ Copied';
+    setTimeout(() => { referralCopyBtn.textContent = 'Copy'; }, 2000);
+  });
+
   async function populateAccountView() {
     const { ss_user: user, ss_access_token: token } =
       await chrome.storage.local.get(['ss_user', 'ss_access_token']);
@@ -346,6 +390,26 @@ document.addEventListener('DOMContentLoaded', async () => {
       } catch {
         accountPlan.innerHTML = `<p class="plan-note" style="color:#f87171">Could not load plan info.</p>`;
       }
+    }
+
+    // ── Referral link + progress ───────────────────────────────────────────
+    if (user?.id) {
+      const shortCode = user.id.slice(0, 8);
+      const refUrl    = `https://studysnap-ai.github.io?ref=${shortCode}`;
+      referralLink.textContent = refUrl;
+
+      // Fetch referral count
+      try {
+        const res  = await fetch(`${BACKEND_URL}/api/referrals`, {
+          headers: { 'Authorization': `Bearer ${token}` },
+        });
+        if (res.ok) {
+          const data  = await res.json();
+          const count = data.count ?? 0;
+          const next  = 3 - (count % 3);
+          referralProgress.textContent = `${count} referred · ${next} until +1`;
+        }
+      } catch { /* silent */ }
     }
   }
 

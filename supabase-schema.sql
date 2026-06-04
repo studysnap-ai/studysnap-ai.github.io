@@ -115,3 +115,62 @@ $$;
 
 grant execute on function get_bonus(uuid, date)          to service_role, anon, authenticated;
 grant execute on function add_share_reward(uuid, date)   to service_role, anon, authenticated;
+
+-- ── Referral system ────────────────────────────────────────────────────────
+-- Each row = one person who signed up using someone else's referral code.
+-- Referrer earns +1 permanent daily capture for every 3 referrals.
+
+create table if not exists referrals (
+  id          uuid primary key default gen_random_uuid(),
+  referrer_id uuid references auth.users(id) on delete cascade not null,
+  referred_id uuid references auth.users(id) on delete cascade not null unique,
+  created_at  timestamptz default now()
+);
+
+alter table referrals enable row level security;
+
+create policy "Users see own referrals"
+  on referrals for select using (auth.uid() = referrer_id);
+
+-- Returns how many people this user has referred
+create or replace function get_referral_count(p_user_id uuid)
+returns integer
+language sql security definer set search_path = public
+as $$
+  select count(*)::integer from referrals where referrer_id = p_user_id;
+$$;
+
+-- Returns permanent bonus captures earned via referrals (floor(count / 3))
+create or replace function get_referral_bonus(p_user_id uuid)
+returns integer
+language sql security definer set search_path = public
+as $$
+  select floor(count(*)::float / 3)::integer from referrals where referrer_id = p_user_id;
+$$;
+
+-- Claims a referral: records that p_referred_id joined via p_referrer_code
+-- p_referrer_code is the first 8 chars of the referrer's user ID
+create or replace function claim_referral(p_referred_id uuid, p_referrer_code text)
+returns boolean
+language plpgsql security definer set search_path = public
+as $$
+declare v_referrer_id uuid;
+begin
+  -- Find the referrer by their short code
+  select id into v_referrer_id from auth.users
+  where left(id::text, 8) = p_referrer_code limit 1;
+
+  if v_referrer_id is null then return false; end if;
+  if v_referrer_id = p_referred_id then return false; end if; -- can't refer yourself
+
+  insert into referrals (referrer_id, referred_id)
+  values (v_referrer_id, p_referred_id)
+  on conflict (referred_id) do nothing;  -- each new user can only be referred once
+
+  return true;
+end;
+$$;
+
+grant execute on function get_referral_count(uuid)              to service_role, anon, authenticated;
+grant execute on function get_referral_bonus(uuid)              to service_role, anon, authenticated;
+grant execute on function claim_referral(uuid, text)            to service_role, anon, authenticated;

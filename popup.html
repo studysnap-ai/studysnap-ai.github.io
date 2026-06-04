@@ -33,6 +33,9 @@
 
       <p class="login-error" id="loginError" hidden></p>
 
+      <div class="referral-input-wrap" id="refInputWrap">
+        <input type="text" class="referral-input" id="refCodeInput" placeholder="Referral code (optional)" maxlength="12" />
+      </div>
       <p class="login-note">Free: 5 captures/day &nbsp;·&nbsp; Pro: unlimited</p>
 
     </div>
@@ -94,7 +97,16 @@
         <!-- Upgrade prompt (shown when free limit is hit) -->
         <div class="upgrade-prompt" id="upgradePrompt" hidden>
           <p class="upgrade-text">You've used all 5 free captures today.</p>
-          <button class="share-reward-btn" id="shareRewardBtn">📢 Share for +1 capture</button>
+
+          <!-- Share for +1 — multi-platform -->
+          <button class="share-toggle-btn" id="shareToggleBtn">📢 Share for +1 capture</button>
+          <div class="share-platforms" id="sharePlatforms" hidden>
+            <button class="platform-btn" data-platform="twitter">🐦 X / Twitter</button>
+            <button class="platform-btn" data-platform="whatsapp">💬 WhatsApp</button>
+            <button class="platform-btn" data-platform="facebook">👥 Facebook</button>
+            <button class="platform-btn" data-platform="copy">📋 Copy link <span class="platform-note">(Instagram · TikTok)</span></button>
+          </div>
+
           <button class="upgrade-btn" id="upgradeBtn">Upgrade to Pro — $4.99/mo</button>
         </div>
       </div>
@@ -150,6 +162,19 @@
 
         <div class="account-plan" id="accountPlan">
           <!-- populated by JS -->
+        </div>
+
+        <!-- Referral section -->
+        <div class="referral-section" id="referralSection">
+          <div class="referral-header">
+            <span class="referral-title">👥 Invite friends</span>
+            <span class="referral-progress" id="referralProgress">0 / 3</span>
+          </div>
+          <p class="referral-note">Every 3 friends who join = +1 permanent daily capture</p>
+          <div class="referral-link-row">
+            <span class="referral-link-text" id="referralLink">Loading…</span>
+            <button class="referral-copy-btn" id="referralCopyBtn">Copy</button>
+          </div>
         </div>
 
         <button class="sign-out-btn" id="signOutBtn">Sign Out</button>

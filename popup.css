@@ -741,7 +741,8 @@ body {
   line-height: 1.4;
 }
 
-.share-reward-btn {
+/* Share toggle button */
+.share-toggle-btn {
   width: 100%;
   padding: 9px 16px;
   background: none;
@@ -756,18 +757,145 @@ body {
   letter-spacing: 0.1px;
 }
 
-.share-reward-btn:hover:not(:disabled) {
-  background: rgba(99, 102, 241, 0.07);
-  border-color: #6366f1;
+.share-toggle-btn:hover { background: rgba(99,102,241,0.07); border-color: #6366f1; }
+.share-toggle-btn.share-open { border-color: #6366f1; background: rgba(99,102,241,0.07); }
+.share-toggle-btn.share-claimed {
+  color: #22c55e; border-color: rgba(34,197,94,0.4); background: rgba(34,197,94,0.06);
 }
 
-.share-reward-btn:disabled { opacity: 0.55; cursor: not-allowed; }
-
-.share-reward-btn.share-claimed {
-  color: #22c55e;
-  border-color: rgba(34, 197, 94, 0.4);
-  background: rgba(34, 197, 94, 0.06);
+/* Platform buttons grid */
+.share-platforms {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+  padding: 4px 0 2px;
 }
+
+.platform-btn {
+  padding: 8px 10px;
+  background: #fff;
+  border: 1px solid rgba(0,0,0,0.09);
+  border-radius: 8px;
+  color: #333344;
+  font-size: 12px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+  text-align: left;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.platform-btn:hover { background: #f4f4ff; border-color: rgba(99,102,241,0.3); }
+
+.platform-note {
+  font-weight: 400;
+  font-size: 10px;
+  color: #9999aa;
+}
+
+/* ── Referral section (Account view) ─────────────────────────── */
+
+.referral-section {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  padding: 12px;
+  background: #fff;
+  border: 1px solid rgba(0,0,0,0.07);
+  border-radius: 10px;
+}
+
+.referral-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.referral-title {
+  font-size: 12.5px;
+  font-weight: 700;
+  color: #111118;
+}
+
+.referral-progress {
+  font-size: 11px;
+  font-weight: 600;
+  color: #6366f1;
+  background: rgba(99,102,241,0.1);
+  border: 1px solid rgba(99,102,241,0.2);
+  border-radius: 20px;
+  padding: 2px 8px;
+}
+
+.referral-note {
+  font-size: 11px;
+  color: #9999aa;
+  line-height: 1.4;
+}
+
+.referral-link-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: #f4f4f8;
+  border: 1px solid rgba(0,0,0,0.07);
+  border-radius: 7px;
+  padding: 6px 8px;
+}
+
+.referral-link-text {
+  font-size: 10.5px;
+  color: #555566;
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-family: 'SF Mono', 'Menlo', monospace;
+}
+
+.referral-copy-btn {
+  flex-shrink: 0;
+  padding: 3px 9px;
+  background: #6366f1;
+  color: #fff;
+  border: none;
+  border-radius: 5px;
+  font-size: 11px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.referral-copy-btn:hover { background: #4f46e5; }
+
+/* ── Referral input on login screen ─────────────────────────── */
+
+.referral-input-wrap { width: 100%; }
+
+.referral-input {
+  width: 100%;
+  padding: 9px 12px;
+  background: rgba(255,255,255,0.08);
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: 8px;
+  color: #e8e8f5;
+  font-size: 12.5px;
+  font-family: inherit;
+  text-align: center;
+  letter-spacing: 0.5px;
+  transition: border-color 0.15s;
+}
+
+.referral-input:focus {
+  outline: none;
+  border-color: rgba(99,102,241,0.5);
+}
+
+.referral-input::placeholder { color: rgba(255,255,255,0.3); }
 
 .upgrade-btn {
   width: 100%;

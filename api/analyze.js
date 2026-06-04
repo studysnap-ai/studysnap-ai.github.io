@@ -154,13 +154,14 @@ export default async function handler(req, res) {
     if (user && !isPro) {
       const today = new Date().toISOString().split('T')[0];
 
-      const [{ data: usageCount }, { data: bonus }] = await Promise.all([
-        supabase.rpc('get_usage', { p_user_id: user.id, p_date: today }),
-        supabase.rpc('get_bonus', { p_user_id: user.id, p_date: today }),
+      const [{ data: usageCount }, { data: shareBonus }, { data: refBonus }] = await Promise.all([
+        supabase.rpc('get_usage',          { p_user_id: user.id, p_date: today }),
+        supabase.rpc('get_bonus',          { p_user_id: user.id, p_date: today }),
+        supabase.rpc('get_referral_bonus', { p_user_id: user.id }),
       ]);
 
       const todayCount     = usageCount ?? 0;
-      const effectiveLimit = FREE_LIMIT + (bonus ?? 0);
+      const effectiveLimit = FREE_LIMIT + (shareBonus ?? 0) + (refBonus ?? 0);
 
       if (todayCount >= effectiveLimit) {
         return res.status(429).json({
