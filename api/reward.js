@@ -2,29 +2,13 @@
 // Max 1 share reward per user per day (enforced in the DB via add_share_reward RPC).
 
 import { createClient } from '@supabase/supabase-js';
+import { verifyUser, bearerToken } from './_auth.js';
+import { FREE_LIMIT } from './_config.js';
 
 const supabase = createClient(
   process.env.SUPABASE_URL,
   process.env.SUPABASE_SERVICE_ROLE_KEY
 );
-
-const FREE_LIMIT = 5;
-
-function getUserFromToken(token) {
-  try {
-    const payload = token.split('.')[1];
-    const json = Buffer.from(
-      payload.replace(/-/g, '+').replace(/_/g, '/'),
-      'base64'
-    ).toString('utf8');
-    const data = JSON.parse(json);
-    if (data.exp && data.exp < Math.floor(Date.now() / 1000)) return null;
-    if (!data.sub) return null;
-    return { id: data.sub, email: data.email };
-  } catch {
-    return null;
-  }
-}
 
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin',  '*');
@@ -33,10 +17,10 @@ export default async function handler(req, res) {
   if (req.method === 'OPTIONS') return res.status(200).end();
   if (req.method !== 'POST')    return res.status(405).end();
 
-  const token = req.headers.authorization?.replace('Bearer ', '');
+  const token = bearerToken(req);
   if (!token) return res.status(401).json({ error: 'Not authenticated.' });
 
-  const user = getUserFromToken(token);
+  const user = await verifyUser(token);
   if (!user) return res.status(401).json({ error: 'Invalid or expired token.' });
 
   const today = new Date().toISOString().split('T')[0];

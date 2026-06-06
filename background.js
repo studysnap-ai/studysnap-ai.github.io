@@ -93,9 +93,6 @@ async function signInWithGoogle(sendResponse) {
       `&code_challenge=${codeChallenge}` +
       `&code_challenge_method=s256`;
 
-    console.log('[StudySnap] Redirect URL:', redirectUrl);
-    console.log('[StudySnap] Auth URL:', authUrl);
-
     // Open the Google sign-in popup
     const responseUrl = await new Promise((resolve, reject) => {
       chrome.identity.launchWebAuthFlow(
@@ -107,8 +104,6 @@ async function signInWithGoogle(sendResponse) {
         }
       );
     });
-
-    console.log('[StudySnap] Auth redirect URL:', responseUrl);
 
     // Supabase PKCE returns ?code=... in the query string
     const code = new URL(responseUrl).searchParams.get('code');
@@ -125,7 +120,6 @@ async function signInWithGoogle(sendResponse) {
     });
 
     const tokens = await tokenRes.json();
-    console.log('[StudySnap] Token exchange response:', tokenRes.status, JSON.stringify(tokens));
 
     if (!tokenRes.ok || !tokens.access_token) {
       throw new Error(tokens.error_description || tokens.message || 'Token exchange failed.');

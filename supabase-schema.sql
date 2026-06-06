@@ -1,7 +1,7 @@
 -- StudySnap v2.0 — Supabase Database Schema
 -- Run this in your Supabase SQL editor
 
--- Usage tracking (free tier: 10 captures/day)
+-- Usage tracking (free tier: 5 captures/day — see api/_config.js)
 create table if not exists usage (
   id         uuid primary key default gen_random_uuid(),
   user_id    uuid references auth.users(id) on delete cascade not null,

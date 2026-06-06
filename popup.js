@@ -162,7 +162,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         selectBtn.hidden      = false;
       } else {
         const used  = data.usedToday ?? 0;
-        const limit = data.limit     ?? 10;
+        const limit = data.limit     ?? 5;
         const pct   = Math.min(100, Math.round((used / limit) * 100));
 
         usageLabel.textContent = `${limit - used} capture${(limit - used) !== 1 ? 's' : ''} left today`;
@@ -380,7 +380,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             <p class="plan-note">Unlimited captures — thank you for supporting StudySnap!</p>`;
         } else {
           const used  = data.usedToday ?? 0;
-          const limit = data.limit     ?? 10;
+          const limit = data.limit     ?? 5;
           accountPlan.innerHTML = `
             <div class="plan-badge free">Free Plan</div>
             <p class="plan-note">${used} of ${limit} captures used today.</p>
@@ -398,7 +398,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     // ── Referral link + progress ───────────────────────────────────────────
     if (user?.id) {
       const shortCode = user.id.slice(0, 8);
-      const refUrl    = `https://studysnap-ai.github.io?ref=${shortCode}`;
+      const refUrl    = `https://trystudysnap.com?ref=${shortCode}`;
       referralLink.textContent = refUrl;
 
       // Fetch referral stats
