@@ -2,13 +2,12 @@
 
 import { createClient } from '@supabase/supabase-js';
 import { verifyUser, bearerToken } from './_auth.js';
+import { FREE_LIMIT } from './_config.js';
 
 const supabase = createClient(
   process.env.SUPABASE_URL,
   process.env.SUPABASE_SERVICE_ROLE_KEY
 );
-
-const FREE_LIMIT = 5;
 
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin',  '*');

@@ -9,14 +9,12 @@
 
 import { createClient } from '@supabase/supabase-js';
 import { verifyUser } from './_auth.js';
+import { FREE_LIMIT, PRO_MONTHLY_LIMIT } from './_config.js';
 
 const supabase = createClient(
   process.env.SUPABASE_URL,
   process.env.SUPABASE_SERVICE_ROLE_KEY
 );
-
-
-const FREE_LIMIT = 5; // captures per day on free tier
 
 const SYSTEM_PROMPT = `You are StudySnap, an AI study assistant.
 
@@ -130,7 +128,6 @@ export default async function handler(req, res) {
     }
 
     // ── Pro monthly cap ───────────────────────────────────────────────────────
-    const PRO_MONTHLY_LIMIT = 700;
     if (user && isPro) {
       const today      = new Date().toISOString().split('T')[0];
       const monthStart = today.slice(0, 7) + '-01'; // YYYY-MM-01
@@ -150,6 +147,8 @@ export default async function handler(req, res) {
     }
 
     // ── Free tier limit ───────────────────────────────────────────────────────
+    // Only CHECK the limit here. We increment *after* a successful AI call so a
+    // failed capture (OpenAI error, parse failure) never costs the user a credit.
     if (user && !isPro) {
       const today = new Date().toISOString().split('T')[0];
 
@@ -167,13 +166,6 @@ export default async function handler(req, res) {
           limitReached: true,
         });
       }
-
-      // Increment via SECURITY DEFINER function — bypasses all permission checks
-      const { error: rpcError } = await supabase.rpc('increment_usage', {
-        p_user_id: user.id,
-        p_date:    today,
-      });
-      if (rpcError) console.error(`[SS] rpc_fail: ${rpcError.message}`);
     }
 
     // ── AI call — smart model routing ────────────────────────────────────────
@@ -193,6 +185,17 @@ export default async function handler(req, res) {
         result   = await callOpenAI('gpt-4o', base64Image, pageText);
         upgraded = true;
       }
+    }
+
+    // ── Charge the capture only now that the AI call succeeded ────────────────
+    if (user && !isPro) {
+      const today = new Date().toISOString().split('T')[0];
+      // Increment via SECURITY DEFINER function — bypasses all permission checks
+      const { error: rpcError } = await supabase.rpc('increment_usage', {
+        p_user_id: user.id,
+        p_date:    today,
+      });
+      if (rpcError) console.error(`[SS] rpc_fail: ${rpcError.message}`);
     }
 
     return res.status(200).json({ ...result, isPro, upgraded });
