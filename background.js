@@ -236,20 +236,20 @@ async function runCaptureFlow(sendResponse) {
               input.getAttribute('data-state') === 'selected' ||
               el?.getAttribute('aria-selected')  === 'true';
 
-            // Color-based detection: check container AND all children for green/red
+            // Color-based detection: check ONLY the option's immediate container
+            // (label or li) — never the question title which may have red asterisks
             let colorAnswered = false;
             try {
-              const optEl   = input.closest('li, label, div') || input.parentElement;
-              const toCheck = [optEl, ...Array.from(optEl?.querySelectorAll('*') || [])].slice(0, 20);
+              // Use label/li only — avoid div which can capture the whole question
+              const optEl   = input.closest('label, li') || input.parentElement;
+              // Check the container + direct children only (depth 1), not the full subtree
+              const toCheck = [optEl, ...Array.from(optEl?.children || [])];
               for (const el of toCheck) {
-                const rgb     = (window.getComputedStyle(el).color.match(/\d+/g) || [0,0,0]).map(Number);
+                const style   = window.getComputedStyle(el);
+                const rgb     = (style.color.match(/\d+/g) || [0,0,0]).map(Number);
                 const isGreen = rgb[1] > 100 && rgb[1] > rgb[0] * 1.5 && rgb[1] > rgb[2] * 1.5;
                 const isRed   = rgb[0] > 100 && rgb[0] > rgb[1] * 1.5 && rgb[0] > rgb[2] * 1.5;
-                // Also check background color for highlight-based feedback
-                const bg      = (window.getComputedStyle(el).backgroundColor.match(/\d+/g) || [0,0,0]).map(Number);
-                const bgGreen = bg[1] > 100 && bg[1] > bg[0] * 1.4 && bg[1] > bg[2] * 1.4;
-                const bgRed   = bg[0] > 100 && bg[0] > bg[1] * 1.4 && bg[0] > bg[2] * 1.4;
-                if (isGreen || isRed || bgGreen || bgRed) { colorAnswered = true; break; }
+                if (isGreen || isRed) { colorAnswered = true; break; }
               }
             } catch {}
 
