@@ -195,6 +195,9 @@ export default async function handler(req, res) {
     }
 
     // ── AI call — smart model routing ────────────────────────────────────────
+    // Temporary debug log
+    console.log('[SS debug] pageText length:', pageText?.length ?? 0);
+    console.log('[SS debug] pageText preview:', pageText?.slice(0, 300) ?? 'null');
     const base64Image = imageDataUrl.replace(/^data:image\/\w+;base64,/, '');
     let result;
     let upgraded = false;
