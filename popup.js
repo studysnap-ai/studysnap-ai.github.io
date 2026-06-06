@@ -1,6 +1,6 @@
 // popup.js — StudySnap v2.0 Popup Controller
 
-const BACKEND_URL = 'https://study-snap-tau.vercel.app';
+const BACKEND_URL = 'https://trystudysnap.com';
 
 document.addEventListener('DOMContentLoaded', async () => {
 
@@ -226,7 +226,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   // ── Share for +1 — multi-platform ─────────────────────────────────────────
 
-  const SHARE_URL  = 'https://studysnap-ai.github.io';
+  const SHARE_URL  = 'https://trystudysnap.com';
   const SHARE_TEXT = 'I\'m using StudySnap to get instant AI answers on any study question 📸⚡\n\nFree to try:';
 
   shareToggleBtn.addEventListener('click', () => {

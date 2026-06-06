@@ -13,7 +13,7 @@
 //                                | parse tokens from redirect URL
 //                                | store in chrome.storage.local
 
-const BACKEND_URL      = 'https://study-snap-tau.vercel.app';
+const BACKEND_URL      = 'https://trystudysnap.com';
 const SUPABASE_URL     = 'https://vmoqyntmuyrehrtzubmj.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZtb3F5bnRtdXlyZWhydHp1Ym1qIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODAzNTE5ODAsImV4cCI6MjA5NTkyNzk4MH0.C3GfsbAabrLKIil8GZ6ICEmXgV5n1-W-oDPppFhgI20';
 

@@ -33,7 +33,7 @@
   ],
 
   "host_permissions": [
-    "https://study-snap-tau.vercel.app/*",
+    "https://trystudysnap.com/*",
     "https://vmoqyntmuyrehrtzubmj.supabase.co/*"
   ]
 }

@@ -36,8 +36,8 @@ export default async function handler(req, res) {
       payment_method_types: ['card'],
       customer_email:       user.email,
       line_items: [{ price: process.env.STRIPE_PRO_PRICE_ID, quantity: 1 }],
-      success_url: `https://studysnap-ai.github.io?upgraded=true`,
-      cancel_url:  `https://studysnap-ai.github.io?upgraded=false`,
+      success_url: `https://trystudysnap.com?upgraded=true`,
+      cancel_url:  `https://trystudysnap.com?upgraded=false`,
       metadata:    { user_id: user.id },
     };
 
