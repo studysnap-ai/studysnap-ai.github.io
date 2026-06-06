@@ -189,9 +189,11 @@ async function runCaptureFlow(sendResponse) {
     // Capture the visible area of the page as a PNG data URL
     const screenshotDataUrl = await chrome.tabs.captureVisibleTab(null, { format: 'png' });
 
-    // Extract visible text from the DOM including selection state for better accuracy
-    const [{ result: pageText }] = await chrome.scripting.executeScript({
-      target: { tabId: tab.id },
+    // Extract visible text from the DOM including selection state for better accuracy.
+    // Inject into ALL frames — some quizzes render inside an iframe, so the top
+    // document only holds nav/cookie chrome.
+    const frameResults = await chrome.scripting.executeScript({
+      target: { tabId: tab.id, allFrames: true },
       func: () => {
         try {
           const lines = [];
@@ -308,7 +310,16 @@ async function runCaptureFlow(sendResponse) {
           return document.body.innerText.slice(0, 3000);
         }
       },
-    }).catch(() => [{ result: null }]);
+    }).catch(() => []);
+
+    // Combine text across frames. The quiz frame (with real questions) is usually
+    // the largest, so order by length and let it lead; cap the total payload.
+    const pageText = (frameResults || [])
+      .map(r => r?.result)
+      .filter(t => typeof t === 'string' && t.trim())
+      .sort((a, b) => b.length - a.length)
+      .join('\n\n----- (next frame) -----\n\n')
+      .slice(0, 6000) || null;
 
     // Send to backend for AI analysis
     const result = await callBackendAPI(screenshotDataUrl, pageText);
