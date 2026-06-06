@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://studysnap-ai.github.io/sitemap.xml

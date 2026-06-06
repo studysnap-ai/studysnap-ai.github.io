@@ -5,6 +5,23 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>StudySnap — AI Study Assistant for Chrome</title>
   <meta name="description" content="Capture any quiz or study question and get an instant AI-powered answer with explanation. No API key needed — just sign in with Google.">
+
+  <!-- Canonical URL -->
+  <link rel="canonical" href="https://studysnap-ai.github.io">
+
+  <!-- Open Graph / Social sharing -->
+  <meta property="og:type"        content="website">
+  <meta property="og:url"         content="https://studysnap-ai.github.io">
+  <meta property="og:site_name"   content="StudySnap">
+  <meta property="og:title"       content="StudySnap — AI Study Assistant for Chrome">
+  <meta property="og:description" content="Capture any quiz or study question and get an instant AI answer with explanation. Free — no API key needed.">
+  <meta property="og:image"       content="https://studysnap-ai.github.io/icons/icon128.png">
+
+  <!-- Twitter / X Card -->
+  <meta name="twitter:card"        content="summary">
+  <meta name="twitter:title"       content="StudySnap — AI Study Assistant for Chrome">
+  <meta name="twitter:description" content="Capture any quiz or study question and get an instant AI answer. Free Chrome extension — no API key needed.">
+  <meta name="twitter:image"       content="https://studysnap-ai.github.io/icons/icon128.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
   <style>
@@ -416,7 +433,7 @@
             </div>
           </div>
         </div>
-        <div class="float-badge fb-bot"><span class="fb-dot" style="background:var(--yellow)"></span> Smart AI · 10 free/day</div>
+        <div class="float-badge fb-bot"><span class="fb-dot" style="background:var(--yellow)"></span> Smart AI · 5 free/day</div>
       </div>
     </div>
   </section>
@@ -548,7 +565,7 @@
             <p class="plan-desc">Everything you need to get started — no credit card required.</p>
           </div>
           <div class="plan-features">
-            <div class="plan-feat"><span class="plan-feat-icon">✓</span> 10 captures per day</div>
+            <div class="plan-feat"><span class="plan-feat-icon">✓</span> 5 captures per day</div>
             <div class="plan-feat"><span class="plan-feat-icon">✓</span> All 7+ question types</div>
             <div class="plan-feat"><span class="plan-feat-icon">✓</span> Answer + explanation</div>
             <div class="plan-feat"><span class="plan-feat-icon">✓</span> Confidence score</div>
@@ -590,12 +607,12 @@
     <div class="cta-glow"></div>
     <div class="container">
       <h2>Your next exam starts <span class="highlight">now.</span></h2>
-      <p>Free to install. Sign in with Google and get 10 captures a day — no API key, no credit card, no setup.</p>
+      <p>Free to install. Sign in with Google and get 5 captures a day — no API key, no credit card, no setup.</p>
       <div class="cta-btns">
         <a href="https://chromewebstore.google.com/detail/studysnap/kodcbfiiefldhepmmjloifofmokhdekf" class="btn-main">⚡ Add to Chrome — Free</a>
         <a href="#pricing" class="btn-sec">See pricing →</a>
       </div>
-      <p class="cta-note">Free: 10 captures/day &nbsp;·&nbsp; Pro: $4.99/mo unlimited &nbsp;·&nbsp; Works on any site</p>
+      <p class="cta-note">Free: 5 captures/day &nbsp;·&nbsp; Pro: $4.99/mo unlimited &nbsp;·&nbsp; Works on any site</p>
     </div>
   </section>
 
@@ -610,6 +627,44 @@
       <span class="footer-copy">© 2026 StudySnap</span>
     </div>
   </footer>
+
+  <!-- JSON-LD Schema: SoftwareApplication — rich results for Google -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "SoftwareApplication",
+    "name": "StudySnap",
+    "applicationCategory": "EducationApplication",
+    "operatingSystem": "Chrome",
+    "description": "AI-powered Chrome extension that captures any quiz or study question and delivers instant answers with explanations. No API key needed — sign in with Google.",
+    "url": "https://studysnap-ai.github.io",
+    "downloadUrl": "https://chromewebstore.google.com/detail/studysnap/kodcbfiiefldhepmmjloifofmokhdekf",
+    "screenshot": "https://studysnap-ai.github.io/icons/icon128.png",
+    "featureList": "Instant AI answers, Multiple choice, True/False, Fill in the blank, Confidence scores, Answer history, No API key required",
+    "offers": [
+      {
+        "@type": "Offer",
+        "name": "Free",
+        "price": "0",
+        "priceCurrency": "USD",
+        "description": "5 captures per day, all question types"
+      },
+      {
+        "@type": "Offer",
+        "name": "Pro",
+        "price": "4.99",
+        "priceCurrency": "USD",
+        "billingIncrement": "P1M",
+        "description": "Unlimited captures, Select Area tool, powered by GPT-4o"
+      }
+    ],
+    "aggregateRating": {
+      "@type": "AggregateRating",
+      "ratingValue": "5",
+      "ratingCount": "1"
+    }
+  }
+  </script>
 
 </body>
 </html>
