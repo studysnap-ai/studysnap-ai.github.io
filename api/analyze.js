@@ -196,10 +196,7 @@ export default async function handler(req, res) {
 
     // ── AI call — smart model routing ────────────────────────────────────────
     // Temporary debug
-    const ptLen = pageText?.length ?? 0;
-    const hasSkip = pageText?.includes('SKIP') ?? false;
-    const skipCount = (pageText?.match(/SKIP/g) || []).length;
-    console.log(`[SS] ptLen=${ptLen} hasSkip=${hasSkip} skipCount=${skipCount}`);
+    console.log(`[SS] ptLen=${pageText?.length ?? 0} text="${pageText?.slice(0, 200) ?? 'null'}"`);
     const base64Image = imageDataUrl.replace(/^data:image\/\w+;base64,/, '');
     let result;
     let upgraded = false;
