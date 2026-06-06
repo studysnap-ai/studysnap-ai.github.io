@@ -208,7 +208,6 @@ async function runCaptureFlow(sendResponse) {
           inputs.forEach(input => {
             const isNativeInput = input instanceof HTMLInputElement;
             const el  = input.closest('li, div, label, tr') || input.parentElement;
-            const cls = (el?.className || '') + ' ' + (input.className || '');
 
             // Get the label text
             const label = isNativeInput
@@ -217,8 +216,16 @@ async function runCaptureFlow(sendResponse) {
                  input.parentElement?.innerText || '')
               : (input.innerText || input.textContent || '');
 
-            // CSS class / name answered detection
-            const cssSelected = /selected|active|checked|correct|incorrect|wrong|answered|chosen|marked|correcto|incorrecto|verdadero|falso|acierto|error|bien|mal/i.test(cls);
+            // CSS class answered detection — scope to the OPTION itself (its own
+            // class + nearest label/li/role element), never a broad container, and
+            // match WHOLE words so generic classes like "normal" (contains "mal"),
+            // "active", or validation "error" classes can't trigger a false positive.
+            const optCls = (
+              (input.closest('label, li, [role]')?.className || '') + ' ' +
+              (input.className || '')
+            ).toString().toLowerCase();
+            const cssSelected =
+              /\b(selected|checked|chosen|correct|incorrect|wrong|answered|correcto|incorrecto|acierto)\b/.test(optCls);
 
             // ARIA answered detection — covers custom quiz elements
             const ariaSelected =
@@ -230,17 +237,29 @@ async function runCaptureFlow(sendResponse) {
               input.getAttribute('data-state') === 'selected' ||
               el?.getAttribute('aria-selected')  === 'true';
 
-            // Color-based detection: check ONLY the option's immediate container
-            // (label or li) — never the question title which may have red asterisks
+            // Color-based grading detection (green = correct, red = wrong, shown
+            // AFTER a question is answered). Inspect ONLY this option's own label
+            // element and its direct children — never the question title, which can
+            // carry a red required-field "*" that would falsely flag the question.
             let colorAnswered = false;
             try {
-              // Use label/li only — avoid div which can capture the whole question
-              const optEl   = input.closest('label, li') || input.parentElement;
-              // Check the container + direct children only (depth 1), not the full subtree
-              const toCheck = [optEl, ...Array.from(optEl?.children || [])];
-              for (const el of toCheck) {
-                const style   = window.getComputedStyle(el);
-                const rgb     = (style.color.match(/\d+/g) || [0,0,0]).map(Number);
+              // The element holding THIS option's label text (option-scoped, so we
+              // never climb up to the shared question container).
+              const labelEl =
+                (isNativeInput && input.id && document.querySelector(`label[for="${input.id}"]`)) ||
+                input.closest('label') ||
+                input.parentElement;
+
+              const toCheck = [labelEl, ...Array.from(labelEl?.children || [])];
+              for (const node of toCheck) {
+                if (!node) continue;
+                const txt    = (node.textContent || '').trim();
+                const isIcon = /^(svg|i|img|use|path|span)$/i.test(node.tagName) && txt === '';
+                // Ignore empty/asterisk-only text nodes (a red "*" is a required
+                // marker, not a graded answer). Real grading colors the option's
+                // words, or shows a dedicated icon — both still pass.
+                if (!isIcon && (txt === '' || /^[*\s]+$/.test(txt))) continue;
+                const rgb     = (window.getComputedStyle(node).color.match(/\d+/g) || [0,0,0]).map(Number);
                 const isGreen = rgb[1] > 100 && rgb[1] > rgb[0] * 1.5 && rgb[1] > rgb[2] * 1.5;
                 const isRed   = rgb[0] > 100 && rgb[0] > rgb[1] * 1.5 && rgb[0] > rgb[2] * 1.5;
                 if (isGreen || isRed) { colorAnswered = true; break; }

@@ -20,6 +20,9 @@ const SYSTEM_PROMPT = `You are StudySnap, an AI study assistant.
 
 Analyze the screenshot and answer ALL visible UNANSWERED questions in one response.
 
+SOURCE OF TRUTH:
+The SCREENSHOT is authoritative — answer every unanswered question you can SEE in the image. Any "extracted page text" provided is only a supplementary hint; it is often incomplete (questions inside iframes are missing) or polluted with unrelated page chrome such as cookie-consent banners and navigation. NEVER decide a page has no questions just because the extracted text doesn't mention them, and NEVER treat cookie/consent checkboxes or navigation as study questions. If the screenshot shows unanswered questions, you MUST answer them.
+
 IDENTIFYING ANSWERED QUESTIONS:
 A question is already answered if ANY of its options looks different from the others: colored text (green/red), checkmark ✓, X mark ✗, highlighted background, or any icon. SKIP those entirely — do not include them in your response.
 
@@ -58,11 +61,11 @@ async function callOpenAI(model, base64Image, pageText = null) {
     {
       type: 'text',
       text: pageText
-        ? `The extracted text below marks answered questions with <<QUESTION ALREADY ANSWERED BY USER — SKIP>>. Skip every question with that marker.
+        ? `Answer ALL unanswered questions you can see in the SCREENSHOT.
 
-Answer ALL remaining unanswered questions visible in the screenshot.
+The text below is only a hint and may be incomplete or contain unrelated page chrome (cookie banners, navigation). Use it ONLY to detect already-answered questions: any question marked <<QUESTION ALREADY ANSWERED BY USER — SKIP>> should be skipped. Do not rely on this text for the list of questions — rely on the screenshot.
 
---- Extracted page text ---
+--- Extracted page text (hint only) ---
 ${pageText}`
         : 'Identify and answer ALL unanswered study questions visible in the screenshot.',
     },
@@ -178,10 +181,13 @@ export default async function handler(req, res) {
       result   = await callOpenAI('gpt-4o', base64Image, pageText);
       upgraded = true;
     } else {
-      // Free users: start with mini, upgrade if confidence is low
+      // Free users: start with mini, upgrade if confidence is low OR if mini found
+      // nothing (often a mini miss — e.g. questions in an iframe where the text
+      // hint is useless and only the screenshot has them; gpt-4o sees them).
       result = await callOpenAI('gpt-4o-mini', base64Image, pageText);
+      const questionCount    = (result.questions ?? []).length;
       const hasLowConfidence = (result.questions ?? []).some(q => (q.confidence ?? 100) < 70);
-      if (hasLowConfidence) {
+      if (questionCount === 0 || hasLowConfidence) {
         result   = await callOpenAI('gpt-4o', base64Image, pageText);
         upgraded = true;
       }
