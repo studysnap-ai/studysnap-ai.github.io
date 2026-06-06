@@ -8,6 +8,7 @@
 //   Threshold: any question confidence < 70 triggers the upgrade
 
 import { createClient } from '@supabase/supabase-js';
+import { verifyUser } from './_auth.js';
 
 const supabase = createClient(
   process.env.SUPABASE_URL,
@@ -16,25 +17,6 @@ const supabase = createClient(
 
 
 const FREE_LIMIT = 5; // captures per day on free tier
-
-// Decode a Supabase-issued JWT without a network call.
-// The token is already signed by Supabase so we trust its claims.
-function getUserFromToken(token) {
-  try {
-    const payload = token.split('.')[1];
-    const json = Buffer.from(
-      payload.replace(/-/g, '+').replace(/_/g, '/'),
-      'base64'
-    ).toString('utf8');
-    const data = JSON.parse(json);
-    // Reject expired tokens
-    if (data.exp && data.exp < Math.floor(Date.now() / 1000)) return null;
-    if (!data.sub) return null;
-    return { id: data.sub, email: data.email };
-  } catch {
-    return null;
-  }
-}
 
 const SYSTEM_PROMPT = `You are StudySnap, an AI study assistant.
 
@@ -139,7 +121,7 @@ export default async function handler(req, res) {
     let isPro  = false;
 
     if (token) {
-      user = getUserFromToken(token);
+      user = await verifyUser(token);
 
       if (user) {
         const { data: status } = await supabase.rpc('get_subscription', { p_user_id: user.id });
@@ -195,8 +177,6 @@ export default async function handler(req, res) {
     }
 
     // ── AI call — smart model routing ────────────────────────────────────────
-    // Temporary debug
-    console.log(`[SS] ptLen=${pageText?.length ?? 0} text="${pageText?.slice(0, 200) ?? 'null'}"`);
     const base64Image = imageDataUrl.replace(/^data:image\/\w+;base64,/, '');
     let result;
     let upgraded = false;
