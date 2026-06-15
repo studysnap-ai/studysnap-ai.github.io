@@ -89,14 +89,23 @@
         const badge = questions.length > 1
           ? `<span class="ss-q-num">Q${idx + 1}</span>` : '';
 
+        // Free-text answers (essay / short / fill-in) need to be COPIED and
+        // pasted; multiple-choice answers are SELECTED from the options on page.
+        const qType      = (q.questionType || '').toLowerCase();
+        const isFreeText = qType === 'writing' || qType === 'short' || qType === 'fillin';
+        const answerTag  = isFreeText
+          ? `<button class="ss-copy-btn" type="button" aria-label="Copy answer">&#x1F4CB; Copy</button>`
+          : `<span class="ss-answer-tag">Select on page</span>`;
+        const answerClass = isFreeText ? 'ss-answer-type' : 'ss-answer-select';
+
         card.innerHTML = `
           <div class="ss-section">
             <div class="ss-answer-header">
               ${badge}
               <div class="ss-label">Answer</div>
-              <span class="ss-answer-tag">Select on page</span>
+              ${answerTag}
             </div>
-            <div class="ss-answer-text ss-answer-select"></div>
+            <div class="ss-answer-text ${answerClass}"></div>
           </div>
           <div class="ss-section">
             <div class="ss-label">Why</div>
@@ -145,6 +154,33 @@
 
         thumbUp.addEventListener('click',   () => applyFeedback('correct'));
         thumbDown.addEventListener('click', () => applyFeedback('incorrect'));
+
+        // ── Copy button (free-text answers) ──────────────────────────────────
+        const copyBtn = card.querySelector('.ss-copy-btn');
+        if (copyBtn) {
+          copyBtn.addEventListener('click', async () => {
+            const text = q.answer ?? '';
+            try {
+              await navigator.clipboard.writeText(text);
+            } catch {
+              // Fallback for pages that block the async clipboard API
+              const ta = document.createElement('textarea');
+              ta.value = text;
+              ta.style.position = 'fixed';
+              ta.style.opacity  = '0';
+              document.body.appendChild(ta);
+              ta.select();
+              try { document.execCommand('copy'); } catch {}
+              ta.remove();
+            }
+            copyBtn.innerHTML = '✓ Copied';
+            copyBtn.classList.add('ss-copy-done');
+            setTimeout(() => {
+              copyBtn.innerHTML = '\u{1F4CB} Copy';
+              copyBtn.classList.remove('ss-copy-done');
+            }, 2000);
+          });
+        }
 
         body.appendChild(card);
       });
