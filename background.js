@@ -56,6 +56,20 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     updateHistoryFeedback(message.entryId, message.feedback);
     return false;
   }
+  if (message.action === 'askQuestion') {
+    runTextQuestionFlow(message.question, sendResponse);
+    return true;
+  }
+});
+
+// ── Keyboard shortcut (Ctrl/Cmd+Shift+K) ──────────────────────
+// Fires the same capture flow as clicking "Capture Question". There is no
+// popup to respond to, so we pass a no-op callback — the answer overlay appears
+// on the page on success.
+chrome.commands.onCommand.addListener((command) => {
+  if (command === 'capture-question') {
+    runCaptureFlow(() => {});
+  }
 });
 
 // ── PKCE helpers ─────────────────────────────────────────────
@@ -362,6 +376,37 @@ async function runCaptureFlow(sendResponse) {
   }
 }
 
+// ── Typed question flow (no screenshot) ───────────────────────
+
+async function runTextQuestionFlow(question, sendResponse) {
+  try {
+    const q = (question || '').trim();
+    if (!q) return sendResponse({ success: false, error: 'Please type a question.' });
+
+    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+    if (!tab?.id) return sendResponse({ success: false, error: 'No active tab found.' });
+
+    const result    = await callBackendAPI(null, null, { question: q });
+    const now        = Date.now();
+    const questions  = result.questions ?? [];
+    const entryIds   = questions.map((_, i) => now + i);
+
+    // Show the answer in the same overlay, on the current page
+    await chrome.scripting.insertCSS({ target: { tabId: tab.id }, files: ['overlay.css'] });
+    await chrome.scripting.executeScript({ target: { tabId: tab.id }, files: ['content.js'] });
+    await delay(150);
+    await chrome.tabs.sendMessage(tab.id, { action: 'showOverlay', data: { questions, entryIds } });
+
+    questions.forEach((q, i) => saveToHistory(q, entryIds[i]));
+    sendResponse({ success: true });
+
+  } catch (err) {
+    console.error('[StudySnap] Text question error:', err);
+    if (err.limitReached) return sendResponse({ success: false, error: err.message, limitReached: true });
+    sendResponse({ success: false, error: friendlyError(err.message) });
+  }
+}
+
 // ── Pro: region selection capture ────────────────────────────
 
 async function runSelectionFlow(sendResponse) {
@@ -495,7 +540,8 @@ async function callBackendAPI(screenshotDataUrl, pageText = null, options = {}) 
       imageDataUrl: screenshotDataUrl,
       token,
       pageText,
-      precise: options.precise ?? false,
+      precise:  options.precise  ?? false,
+      question: options.question ?? null,
     }),
   });
 
