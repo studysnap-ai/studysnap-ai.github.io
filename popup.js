@@ -32,6 +32,8 @@ document.addEventListener('DOMContentLoaded', async () => {
   const shareToggleBtn  = document.getElementById('shareToggleBtn');
   const sharePlatforms  = document.getElementById('sharePlatforms');
   const selectBtn       = document.getElementById('selectBtn');
+  const askInput        = document.getElementById('askInput');
+  const askBtn          = document.getElementById('askBtn');
   const referralProgress = document.getElementById('referralProgress');
   const referralLink     = document.getElementById('referralLink');
   const referralCopyBtn  = document.getElementById('referralCopyBtn');
@@ -323,8 +325,46 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
   });
 
+  // ── Type-your-own-question ──────────────────────────────────
+  function submitQuestion() {
+    const q = askInput.value.trim();
+    if (!q) { askInput.focus(); return; }
+
+    setLoading(true);
+    clearStatus();
+    upgradePrompt.hidden = true;
+
+    chrome.runtime.sendMessage({ action: 'askQuestion', question: q }, (response) => {
+      if (chrome.runtime.lastError) {
+        setLoading(false);
+        showStatus('error', 'Extension error — please try again.');
+        return;
+      }
+
+      setLoading(false);
+
+      if (response?.success) {
+        askInput.value = '';
+        showStatus('success', '✓ Answer ready — check the page!');
+        setTimeout(() => window.close(), 1800);
+      } else if (response?.limitReached) {
+        upgradePrompt.hidden = false;
+        showStatus('error', 'Daily limit reached.');
+        chrome.storage.local.get('ss_access_token').then(({ ss_access_token: t }) => {
+          if (t) loadUsage(t);
+        });
+      } else {
+        showStatus('error', response?.error || 'Something went wrong.');
+      }
+    });
+  }
+
+  askBtn.addEventListener('click', submitQuestion);
+  askInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') submitQuestion(); });
+
   function setLoading(active) {
     captureBtn.disabled = active;
+    askBtn.disabled     = active;
     loadingEl.hidden    = !active;
     btnText.textContent = active ? 'Analyzing…' : 'Capture Question';
   }

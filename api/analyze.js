@@ -104,6 +104,55 @@ ${pageText}`
   return { questions: [parsed] };
 }
 
+// ── OpenAI helper — typed text question (no screenshot) ──────────────────────
+
+const TEXT_SYSTEM_PROMPT = `You are StudySnap, an AI study assistant. Answer the student's question clearly and correctly, in the same language as the question.
+
+Respond ONLY with valid JSON (no markdown, no code fences):
+{
+  "questions": [
+    {
+      "questionType": "short",
+      "why": "1-2 sentence reasoning",
+      "answer": "the direct answer",
+      "deepExplanation": "",
+      "confidence": 0-100
+    }
+  ]
+}`;
+
+async function callOpenAIText(model, question) {
+  const response = await fetch('https://api.openai.com/v1/chat/completions', {
+    method: 'POST',
+    headers: {
+      'Content-Type':  'application/json',
+      'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
+    },
+    body: JSON.stringify({
+      model,
+      max_tokens: 2000,
+      temperature: 0,
+      messages: [
+        { role: 'system', content: TEXT_SYSTEM_PROMPT },
+        { role: 'user',   content: question },
+      ],
+    }),
+  });
+
+  if (!response.ok) {
+    const err = await response.json().catch(() => ({}));
+    throw new Error(err?.error?.message ?? `OpenAI ${response.status}`);
+  }
+
+  const data  = await response.json();
+  const raw   = data.choices?.[0]?.message?.content ?? '';
+  const match = raw.match(/\{[\s\S]*\}/);
+  if (!match) throw new Error('Could not parse AI response');
+  const parsed = JSON.parse(match[0]);
+  if (Array.isArray(parsed.questions)) return parsed;
+  return { questions: [parsed] };
+}
+
 // ── Main handler ─────────────────────────────────────────────────────────────
 
 export default async function handler(req, res) {
@@ -114,8 +163,9 @@ export default async function handler(req, res) {
   if (req.method !== 'POST')    return res.status(405).json({ error: 'Method not allowed' });
 
   try {
-    const { imageDataUrl, token, pageText = null, precise = false } = req.body;
-    if (!imageDataUrl) return res.status(400).json({ error: 'No image provided.' });
+    const { imageDataUrl, token, pageText = null, precise = false, question = null } = req.body;
+    const textMode = !imageDataUrl && typeof question === 'string' && question.trim().length > 0;
+    if (!imageDataUrl && !textMode) return res.status(400).json({ error: 'No image or question provided.' });
 
     // ── Auth: verify user token ──────────────────────────────────────────────
     let user   = null;
@@ -172,15 +222,27 @@ export default async function handler(req, res) {
     }
 
     // ── AI call — smart model routing ────────────────────────────────────────
-    const base64Image = imageDataUrl.replace(/^data:image\/\w+;base64,/, '');
     let result;
     let upgraded = false;
 
-    if (isPro || precise) {
+    if (textMode) {
+      // Typed question (no screenshot). Pro gets gpt-4o; free starts on mini and
+      // escalates if unsure.
+      const model = isPro ? 'gpt-4o' : 'gpt-4o-mini';
+      result = await callOpenAIText(model, question.trim());
+      if (!isPro) {
+        const lowConf = (result.questions ?? []).some(q => (q.confidence ?? 100) < 70);
+        if (lowConf) { result = await callOpenAIText('gpt-4o', question.trim()); upgraded = true; }
+      } else {
+        upgraded = true;
+      }
+    } else if (isPro || precise) {
+      const base64Image = imageDataUrl.replace(/^data:image\/\w+;base64,/, '');
       // Pro users and region captures always get gpt-4o — best answer every time
       result   = await callOpenAI('gpt-4o', base64Image, pageText);
       upgraded = true;
     } else {
+      const base64Image = imageDataUrl.replace(/^data:image\/\w+;base64,/, '');
       // Free users: start with mini, upgrade if confidence is low OR if mini found
       // nothing (often a mini miss — e.g. questions in an iframe where the text
       // hint is useless and only the screenshot has them; gpt-4o sees them).

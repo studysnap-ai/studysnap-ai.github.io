@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "StudySnap",
-  "version": "2.0.1",
+  "version": "2.1.0",
   "description": "AI-powered study assistant. Capture any question and get instant answers — no API key needed.",
 
   "action": {
@@ -35,5 +35,15 @@
   "host_permissions": [
     "https://trystudysnap.com/*",
     "https://vmoqyntmuyrehrtzubmj.supabase.co/*"
-  ]
+  ],
+
+  "commands": {
+    "capture-question": {
+      "suggested_key": {
+        "default": "Ctrl+Shift+K",
+        "mac":     "Command+Shift+K"
+      },
+      "description": "Capture and answer questions on the current page"
+    }
+  }
 }
