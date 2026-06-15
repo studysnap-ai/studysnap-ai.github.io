@@ -34,10 +34,16 @@ export default async function handler(req, res) {
 
     const monthStart = today.slice(0, 7) + '-01';
 
-    const [{ data: usedToday }, { data: bonus }, { data: monthlyUsed }] = await Promise.all([
+    // Apply any Ko-fi credits that arrived before this account existed (atomic,
+    // no-op if none). Runs on every popup open — our de-facto "on login" hook.
+    await supabase.rpc('apply_pending_credits', { p_user_id: user.id, p_email: user.email })
+      .catch(() => {});
+
+    const [{ data: usedToday }, { data: bonus }, { data: monthlyUsed }, { data: credits }] = await Promise.all([
       supabase.rpc('get_usage',         { p_user_id: user.id, p_date: today }),
       supabase.rpc('get_bonus',         { p_user_id: user.id, p_date: today }),
       supabase.rpc('get_monthly_usage', { p_user_id: user.id, p_month_start: monthStart }),
+      supabase.rpc('get_user_credits',  { p_user_id: user.id }),
     ]);
 
     const count          = usedToday  ?? 0;
@@ -51,6 +57,7 @@ export default async function handler(req, res) {
       limit:        isPro ? null : effectiveLimit,
       bonus:        bonusCaptures,
       remaining:    isPro ? null : Math.max(0, effectiveLimit - count),
+      credits:      credits ?? 0,
       user: {
         id:     user.id,
         email:  user.email,

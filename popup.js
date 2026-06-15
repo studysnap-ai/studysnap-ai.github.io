@@ -153,6 +153,18 @@ document.addEventListener('DOMContentLoaded', async () => {
         await chrome.storage.local.set({ ss_user: data.user });
       }
 
+      // Ko-fi credits — show the badge whenever the user has any
+      const creditsWrap  = document.getElementById('creditsWrap');
+      const creditsCount = document.getElementById('creditsCount');
+      if (creditsWrap && creditsCount) {
+        if (data.credits > 0) {
+          creditsCount.textContent = data.credits;
+          creditsWrap.hidden = false;
+        } else {
+          creditsWrap.hidden = true;
+        }
+      }
+
       if (data.isPro) {
         const used = data.usedThisMonth ?? 0;
         proBadgeWrap.querySelector('.pro-badge').textContent =

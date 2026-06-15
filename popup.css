@@ -762,6 +762,24 @@ body {
   padding: 3px 10px;
 }
 
+.credits-wrap {
+  margin-top: -2px;
+}
+
+.credits-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11.5px;
+  font-weight: 600;
+  color: #fbbf24;
+  background: rgba(251, 191, 36, 0.1);
+  border: 1px solid rgba(251, 191, 36, 0.25);
+  border-radius: 20px;
+  padding: 3px 10px;
+}
+.credits-badge strong { font-weight: 800; }
+
 /* ════════════════════════════════════════════════════════════════
    UPGRADE PROMPT
    ════════════════════════════════════════════════════════════════ */
