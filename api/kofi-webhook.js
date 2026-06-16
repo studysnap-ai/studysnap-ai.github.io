@@ -16,7 +16,7 @@ const supabase = createClient(
 // Authoritative: map the exact Ko-fi tier name → credits.
 const TIER_CREDITS = {
   'Starter ⚡ 300 Credits': 300,
-  'Pro 📚 700 Credits':     700,
+  'Pro 📚 500 Credits':     500,
   'Elite 🌟 1200 Credits':  1200,
 };
 
