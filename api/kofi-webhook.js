@@ -55,13 +55,15 @@ export default async function handler(req, res) {
     const credits = TIER_CREDITS[payload.tier_name] ?? creditsFromAmount(payload.amount);
 
     const { data: status, error } = await supabase.rpc('award_kofi', {
-      p_txn_id:   payload.kofi_transaction_id,
-      p_email:    payload.email,
-      p_tier:     payload.tier_name ?? null,
-      p_credits:  credits,
-      p_amount:   parseFloat(payload.amount) || 0,
-      p_currency: payload.currency ?? 'USD',
-      p_type:     payload.type,
+      p_txn_id:         payload.kofi_transaction_id,
+      p_email:          payload.email,
+      p_tier:           payload.tier_name ?? null,
+      p_credits:        credits,
+      p_amount:         parseFloat(payload.amount) || 0,
+      p_currency:       payload.currency ?? 'USD',
+      p_type:           payload.type,
+      // Subscription payments reset the monthly balance; one-time tips top up.
+      p_is_subscription: payload.type === 'Subscription',
     });
 
     if (error) console.error('[Ko-fi] award_kofi error:', error.message);
