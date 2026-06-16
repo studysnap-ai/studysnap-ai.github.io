@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Redeem your credits — StudySnap</title>
+  <link rel="canonical" href="https://trystudysnap.com/redeem.html">
+  <meta name="robots" content="noindex">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    :root{--bg:#05051a;--surface:#10103a;--indigo:#6366f1;--violet:#8b5cf6;--yellow:#fbbf24;--green:#34d399;--red:#f87171;--text:#f0f0ff;--muted:#8b8bbd;--border:rgba(99,102,241,.18)}
+    body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px;line-height:1.6}
+    .card{width:100%;max-width:440px;background:var(--surface);border:1px solid var(--border);border-radius:18px;padding:32px;box-shadow:0 24px 60px rgba(0,0,0,.5)}
+    .logo{display:flex;align-items:center;gap:9px;font-weight:800;font-size:1.15rem;margin-bottom:6px}
+    .logo .dot{width:30px;height:30px;border-radius:9px;background:linear-gradient(135deg,var(--indigo),var(--violet));display:flex;align-items:center;justify-content:center}
+    .logo span{color:var(--yellow)}
+    h1{font-size:1.35rem;font-weight:800;margin:14px 0 6px}
+    p.sub{color:var(--muted);font-size:.9rem;margin-bottom:22px}
+    label{display:block;font-size:.78rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin:14px 0 6px}
+    input{width:100%;padding:12px 14px;border-radius:10px;border:1px solid var(--border);background:rgba(99,102,241,.06);color:var(--text);font-size:.95rem;font-family:inherit}
+    input:focus{outline:none;border-color:var(--indigo)}
+    button{width:100%;margin-top:22px;padding:14px;border:none;border-radius:100px;background:linear-gradient(135deg,var(--indigo),var(--violet));color:#fff;font-weight:800;font-size:.95rem;cursor:pointer;transition:transform .15s,opacity .15s}
+    button:hover:not(:disabled){transform:translateY(-1px)}
+    button:disabled{opacity:.6;cursor:default}
+    .msg{margin-top:18px;padding:12px 14px;border-radius:10px;font-size:.88rem;display:none}
+    .msg.ok{display:block;background:rgba(52,211,153,.12);border:1px solid rgba(52,211,153,.3);color:var(--green)}
+    .msg.err{display:block;background:rgba(248,113,113,.1);border:1px solid rgba(248,113,113,.3);color:var(--red)}
+    .hint{font-size:.78rem;color:var(--muted);margin-top:16px}
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="logo"><span class="dot">⚡</span> Study<span>Snap</span></div>
+    <h1>Redeem your credits</h1>
+    <p class="sub">Only needed if your Ko-fi email is different from the email you use to sign in to StudySnap. Otherwise your credits apply automatically.</p>
+
+    <label for="txn">Ko-fi transaction ID</label>
+    <input id="txn" type="text" placeholder="From your Ko-fi receipt email" autocomplete="off">
+
+    <label for="email">Your StudySnap (Google) email</label>
+    <input id="email" type="email" placeholder="you@gmail.com" autocomplete="email">
+
+    <button id="btn">Redeem credits</button>
+    <div class="msg" id="msg"></div>
+    <p class="hint">Tip: your Ko-fi transaction ID is in the receipt Ko-fi emailed you after your payment.</p>
+  </div>
+
+  <script>
+    const btn = document.getElementById('btn');
+    const msg = document.getElementById('msg');
+    btn.addEventListener('click', async () => {
+      const txn   = document.getElementById('txn').value.trim();
+      const email = document.getElementById('email').value.trim();
+      msg.className = 'msg';
+      if (!txn || !email) { msg.className = 'msg err'; msg.textContent = 'Please fill in both fields.'; return; }
+
+      btn.disabled = true; btn.textContent = 'Redeeming…';
+      try {
+        const url = `/api/redeem?kofi_transaction_id=${encodeURIComponent(txn)}&studysnap_email=${encodeURIComponent(email)}`;
+        const res  = await fetch(url);
+        const data = await res.json();
+        if (data.success) {
+          msg.className = 'msg ok';
+          msg.textContent = `✓ Success — ${data.credits_added} credits added to ${email}. Reopen the extension to see them.`;
+        } else {
+          msg.className = 'msg err';
+          msg.textContent = `✗ ${data.error || 'Could not redeem.'}`;
+        }
+      } catch {
+        msg.className = 'msg err';
+        msg.textContent = '✗ Network error — please try again.';
+      } finally {
+        btn.disabled = false; btn.textContent = 'Redeem credits';
+      }
+    });
+  </script>
+</body>
+</html>

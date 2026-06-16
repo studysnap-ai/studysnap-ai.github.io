@@ -199,9 +199,11 @@ export default async function handler(req, res) {
       }
     }
 
-    // ── Free tier limit ───────────────────────────────────────────────────────
-    // Only CHECK the limit here. We increment *after* a successful AI call so a
-    // failed capture (OpenAI error, parse failure) never costs the user a credit.
+    // ── Free tier limit, then Ko-fi credits ────────────────────────────────────
+    // Only CHECK here. We charge *after* a successful AI call so a failed capture
+    // never costs a free capture or a credit. Spend order: free daily first, then
+    // Ko-fi credits. (Stripe Pro users are unlimited and never reach this block.)
+    let useCredit = false;
     if (user && !isPro) {
       const today = new Date().toISOString().split('T')[0];
 
@@ -214,10 +216,15 @@ export default async function handler(req, res) {
       const effectiveLimit = FREE_LIMIT + (shareBonus ?? 0);
 
       if (todayCount >= effectiveLimit) {
-        return res.status(429).json({
-          error: `Free limit reached (${effectiveLimit}/day). Upgrade to Pro for unlimited captures.`,
-          limitReached: true,
-        });
+        // Free allowance used up — fall back to Ko-fi credits if the user has any
+        const { data: credits } = await supabase.rpc('get_user_credits', { p_user_id: user.id });
+        if ((credits ?? 0) <= 0) {
+          return res.status(429).json({
+            error: `Free limit reached (${effectiveLimit}/day) and no credits left. Get credits on Ko-fi or upgrade to Pro.`,
+            limitReached: true,
+          });
+        }
+        useCredit = true;
       }
     }
 
@@ -257,16 +264,22 @@ export default async function handler(req, res) {
 
     // ── Charge the capture only now that the AI call succeeded ────────────────
     if (user && !isPro) {
-      const today = new Date().toISOString().split('T')[0];
-      // Increment via SECURITY DEFINER function — bypasses all permission checks
-      const { error: rpcError } = await supabase.rpc('increment_usage', {
-        p_user_id: user.id,
-        p_date:    today,
-      });
-      if (rpcError) console.error(`[SS] rpc_fail: ${rpcError.message}`);
+      if (useCredit) {
+        // Free allowance was exhausted — spend one Ko-fi credit
+        const { error: spendErr } = await supabase.rpc('spend_user_credit', { p_user_id: user.id });
+        if (spendErr) console.error(`[SS] credit_spend_fail: ${spendErr.message}`);
+      } else {
+        const today = new Date().toISOString().split('T')[0];
+        // Increment daily free usage (SECURITY DEFINER — bypasses permission checks)
+        const { error: rpcError } = await supabase.rpc('increment_usage', {
+          p_user_id: user.id,
+          p_date:    today,
+        });
+        if (rpcError) console.error(`[SS] rpc_fail: ${rpcError.message}`);
+      }
     }
 
-    return res.status(200).json({ ...result, isPro, upgraded });
+    return res.status(200).json({ ...result, isPro, upgraded, usedCredit: useCredit });
 
   } catch (err) {
     console.error('[StudySnap API]', err.message);

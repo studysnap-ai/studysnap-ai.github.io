@@ -190,10 +190,17 @@ document.addEventListener('DOMContentLoaded', async () => {
         usageWrap.hidden    = false;
         proBadgeWrap.hidden = true;
 
-        // Auto-show upgrade prompt if limit is hit
+        // Free used up: if the user has Ko-fi credits, keep capturing (credits
+        // cover it). Otherwise show the upgrade prompt and disable capture.
         if (used >= limit) {
-          upgradePrompt.hidden = false;
-          captureBtn.disabled  = true;
+          if (data.credits > 0) {
+            usageLabel.textContent = 'Free used — now spending credits';
+            upgradePrompt.hidden = true;
+            captureBtn.disabled  = false;
+          } else {
+            upgradePrompt.hidden = false;
+            captureBtn.disabled  = true;
+          }
         }
       }
 

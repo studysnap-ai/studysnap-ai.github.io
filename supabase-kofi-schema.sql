@@ -147,8 +147,23 @@ begin
   return json_build_object('success', true, 'credits_added', v_txn.credits_awarded);
 end; $$;
 
+-- Spend one credit if available (atomic). Returns the remaining balance, or -1
+-- if the user had none. Called by analyze.js after a successful capture once the
+-- free daily allowance is used up.
+create or replace function spend_user_credit(p_user_id uuid)
+returns integer language plpgsql security definer set search_path = public as $$
+declare v_remaining integer;
+begin
+  update user_credits set credits = credits - 1, updated_at = now()
+   where user_id = p_user_id and credits > 0
+   returning credits into v_remaining;
+  if not found then return -1; end if;
+  return v_remaining;
+end; $$;
+
 grant execute on function add_user_credits(uuid, integer)               to service_role;
 grant execute on function get_user_credits(uuid)                        to service_role, authenticated;
 grant execute on function award_kofi(text, text, text, integer, numeric, text, text) to service_role;
 grant execute on function apply_pending_credits(uuid, text)             to service_role;
 grant execute on function redeem_kofi(text, text)                       to service_role;
+grant execute on function spend_user_credit(uuid)                       to service_role;
