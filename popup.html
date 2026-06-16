@@ -19,7 +19,7 @@
         <span class="logo-text">StudySnap</span>
       </div>
 
-      <p class="login-tagline">AI study assistant.<br>No API key needed.</p>
+      <p class="login-tagline" data-i18n="tagline">AI study assistant.<br>No API key needed.</p>
 
       <button class="google-btn" id="signInBtn">
         <svg class="google-icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
@@ -28,15 +28,15 @@
           <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" fill="#FBBC05"/>
           <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
         </svg>
-        <span>Continue with Google</span>
+        <span data-i18n="continueWithGoogle">Continue with Google</span>
       </button>
 
       <p class="login-error" id="loginError" hidden></p>
 
-      <div class="referral-input-wrap" id="refInputWrap">
+      <div class="referral-input-wrap" id="refInputWrap" hidden>
         <input type="text" class="referral-input" id="refCodeInput" placeholder="Referral code (optional)" maxlength="12" />
       </div>
-      <p class="login-note">Free: 5 captures/day &nbsp;·&nbsp; Pro: unlimited</p>
+      <p class="login-note" data-i18n="loginNote">Free: 5 captures/day</p>
 
     </div>
   </div>
@@ -54,8 +54,8 @@
             <span class="logo-text">StudySnap</span>
           </div>
           <div class="header-actions">
-            <button class="icon-btn" id="historyBtn" title="Answer history">📋</button>
-            <button class="icon-btn" id="accountBtn" title="Account">👤</button>
+            <button class="icon-btn" id="historyBtn" data-i18n-title="historyTitle" title="Answer history">📋</button>
+            <button class="icon-btn" id="accountBtn" data-i18n-title="accountTitle" title="Account">👤</button>
           </div>
         </div>
       </div>
@@ -63,7 +63,7 @@
       <!-- Usage bar (free users only) -->
       <div class="usage-bar-wrap" id="usageWrap" hidden>
         <div class="usage-bar-row">
-          <span class="usage-label" id="usageLabel">Loading…</span>
+          <span class="usage-label" id="usageLabel" data-i18n="loading">Loading…</span>
           <span class="usage-count" id="usageCount"></span>
         </div>
         <div class="usage-bar-track">
@@ -78,52 +78,52 @@
 
       <!-- Ko-fi credits (shown when the user has any) -->
       <div class="credits-wrap" id="creditsWrap" hidden>
-        <span class="credits-badge">🪙 <strong id="creditsCount">0</strong> credits</span>
+        <span class="credits-badge">🪙 <strong id="creditsCount">0</strong> <span data-i18n="creditsWord">credits</span></span>
       </div>
 
       <div class="main">
         <button class="capture-btn" id="captureBtn">
           <span class="btn-icon">📸</span>
-          <span class="btn-text">Capture Question</span>
+          <span class="btn-text" data-i18n="captureQuestion">Capture Question</span>
         </button>
 
         <!-- Pro only: region selection -->
-        <button class="select-btn" id="selectBtn" hidden>
+        <button class="select-btn" id="selectBtn" data-i18n="selectArea" hidden>
           ✂ Select Area
         </button>
 
         <!-- Type your own question -->
         <div class="ask-row">
           <input type="text" id="askInput" class="ask-input"
-                 placeholder="…or type a question" autocomplete="off" />
-          <button class="ask-btn" id="askBtn" aria-label="Ask">Ask</button>
+                 data-i18n-ph="askPlaceholder" placeholder="…or type a question" autocomplete="off" />
+          <button class="ask-btn" id="askBtn" data-i18n="ask" aria-label="Ask">Ask</button>
         </div>
 
         <div class="loading" id="loading" hidden>
           <div class="spinner"></div>
-          <span>Analyzing your question…</span>
+          <span data-i18n="analyzing">Analyzing your question…</span>
         </div>
 
         <p class="status" id="status"></p>
 
         <!-- Upgrade prompt (shown when free limit is hit) -->
         <div class="upgrade-prompt" id="upgradePrompt" hidden>
-          <p class="upgrade-text">You've used all 5 free captures today. Support StudySnap on Ko-fi to get monthly credits — each credit is one extra capture.</p>
+          <p class="upgrade-text" data-i18n="upgradeText">You've used all 5 free captures today. Support StudySnap on Ko-fi to get monthly credits — each credit is one extra capture.</p>
 
           <!-- Share for +1 — multi-platform -->
-          <button class="share-toggle-btn" id="shareToggleBtn">📢 Share for +1 capture</button>
+          <button class="share-toggle-btn" id="shareToggleBtn" data-i18n="shareForOne">📢 Share for +1 capture</button>
           <div class="share-platforms" id="sharePlatforms" hidden>
             <button class="platform-btn" data-platform="twitter">🐦 X / Twitter</button>
             <button class="platform-btn" data-platform="whatsapp">💬 WhatsApp</button>
             <button class="platform-btn" data-platform="facebook">👥 Facebook</button>
-            <button class="platform-btn" data-platform="copy">📋 Copy link <span class="platform-note">(Instagram · TikTok)</span></button>
+            <button class="platform-btn" data-platform="copy" data-i18n="copyLink">📋 Copy link <span class="platform-note">(Instagram · TikTok)</span></button>
           </div>
 
-          <button class="upgrade-btn" id="upgradeBtn">☕ Support on Ko-fi</button>
+          <button class="upgrade-btn" id="upgradeBtn" data-i18n="supportKofi">☕ Support on Ko-fi</button>
         </div>
       </div>
 
-      <div class="footer">Study smarter — not just faster</div>
+      <div class="footer" data-i18n="footerTagline">Study smarter — not just faster</div>
     </div>
   </div>
 
@@ -135,9 +135,9 @@
 
       <div class="header">
         <div class="header-row">
-          <button class="icon-btn back-btn" id="historyBackBtn" title="Back">←</button>
-          <span class="settings-title">Answer History</span>
-          <button class="clear-btn" id="clearHistoryBtn" title="Clear all history">🗑</button>
+          <button class="icon-btn back-btn" id="historyBackBtn" data-i18n-title="back" title="Back">←</button>
+          <span class="settings-title" data-i18n="answerHistory">Answer History</span>
+          <button class="clear-btn" id="clearHistoryBtn" data-i18n-title="clearHistory" title="Clear all history">🗑</button>
         </div>
       </div>
 
@@ -156,8 +156,8 @@
 
       <div class="header">
         <div class="header-row">
-          <button class="icon-btn back-btn" id="accountBackBtn" title="Back">←</button>
-          <span class="settings-title">Account</span>
+          <button class="icon-btn back-btn" id="accountBackBtn" data-i18n-title="back" title="Back">←</button>
+          <span class="settings-title" data-i18n="account">Account</span>
           <span class="logo-icon-sm">⚡</span>
         </div>
       </div>
@@ -189,7 +189,7 @@
           </div>
         </div>
 
-        <button class="sign-out-btn" id="signOutBtn">Sign Out</button>
+        <button class="sign-out-btn" id="signOutBtn" data-i18n="signOut">Sign Out</button>
 
       </div>
     </div>

@@ -7,6 +7,9 @@
   if (window.__studySnapLoaded) return;
   window.__studySnapLoaded = true;
 
+  // i18n helper — localizes the overlay to the user's browser language
+  const t = (k) => chrome.i18n.getMessage(k) || '';
+
   let overlayEl = null;
 
   // ── Listen for messages from the background service worker ──────────────────
@@ -76,7 +79,7 @@
     if (questions.length === 0) {
       const p = document.createElement('p');
       p.className = 'ss-no-q';
-      p.textContent = 'No unanswered questions detected on screen.';
+      p.textContent = t('ovNoQuestions');
       body.appendChild(p);
     } else {
       questions.forEach((q, idx) => {
@@ -94,26 +97,26 @@
         const qType      = (q.questionType || '').toLowerCase();
         const isFreeText = qType === 'writing' || qType === 'short' || qType === 'fillin';
         const answerTag  = isFreeText
-          ? `<button class="ss-copy-btn" type="button" aria-label="Copy answer">&#x1F4CB; Copy</button>`
-          : `<span class="ss-answer-tag">Select on page</span>`;
+          ? `<button class="ss-copy-btn" type="button" aria-label="Copy answer">&#x1F4CB; ${t('ovCopy')}</button>`
+          : `<span class="ss-answer-tag">${t('ovSelectOnPage')}</span>`;
         const answerClass = isFreeText ? 'ss-answer-type' : 'ss-answer-select';
 
         card.innerHTML = `
           <div class="ss-section">
             <div class="ss-answer-header">
               ${badge}
-              <div class="ss-label">Answer</div>
+              <div class="ss-label">${t('ovAnswer')}</div>
               ${answerTag}
             </div>
             <div class="ss-answer-text ${answerClass}"></div>
           </div>
           <div class="ss-section">
-            <div class="ss-label">Why</div>
+            <div class="ss-label">${t('ovWhy')}</div>
             <div class="ss-why-text"></div>
           </div>
           <div class="ss-conf-section">
             <div class="ss-conf-row">
-              <span class="ss-label">Confidence</span>
+              <span class="ss-label">${t('ovConfidence')}</span>
               <span class="ss-conf-value" style="color:${conf.color}">${q.confidence}%</span>
             </div>
             <div class="ss-conf-track">
@@ -122,7 +125,7 @@
             <div class="ss-conf-label" style="color:${conf.color}">${conf.label}</div>
           </div>
           <div class="ss-feedback-row">
-            <span class="ss-feedback-label">Was this correct?</span>
+            <span class="ss-feedback-label">${t('ovWasCorrect')}</span>
             <div class="ss-feedback-btns">
               <button class="ss-thumb ss-thumb-up"   aria-label="Yes, correct">&#x1F44D;</button>
               <button class="ss-thumb ss-thumb-down" aria-label="No, incorrect">&#x1F44E;</button>
@@ -145,7 +148,7 @@
           thumbUp.classList.toggle('ss-thumb-dimmed',       type === 'incorrect');
           thumbDown.classList.toggle('ss-thumb-active-down', type === 'incorrect');
           thumbDown.classList.toggle('ss-thumb-dimmed',      type === 'correct');
-          feedLabel.textContent = type === 'correct' ? '✓ Marked correct' : '✗ Marked incorrect';
+          feedLabel.textContent = type === 'correct' ? t('ovMarkedCorrect') : t('ovMarkedIncorrect');
           feedLabel.style.color = type === 'correct' ? '#22c55e' : '#f87171';
           if (entryId) {
             chrome.runtime.sendMessage({ action: 'saveFeedback', entryId, feedback: type });
@@ -173,10 +176,10 @@
               try { document.execCommand('copy'); } catch {}
               ta.remove();
             }
-            copyBtn.innerHTML = '✓ Copied';
+            copyBtn.innerHTML = t('ovCopied');
             copyBtn.classList.add('ss-copy-done');
             setTimeout(() => {
-              copyBtn.innerHTML = '\u{1F4CB} Copy';
+              copyBtn.innerHTML = '\u{1F4CB} ' + t('ovCopy');
               copyBtn.classList.remove('ss-copy-done');
             }, 2000);
           });
@@ -195,9 +198,9 @@
   // ── Helpers ──────────────────────────────────────────────────────────────────
 
   function confidenceInfo(score) {
-    if (score >= 80) return { label: 'High confidence',   color: '#22c55e' };
-    if (score >= 60) return { label: 'Medium confidence', color: '#f59e0b' };
-    return                   { label: 'Low confidence',   color: '#ef4444' };
+    if (score >= 80) return { label: t('ovHigh'),   color: '#22c55e' };
+    if (score >= 60) return { label: t('ovMedium'), color: '#f59e0b' };
+    return                   { label: t('ovLow'),   color: '#ef4444' };
   }
 
 })();

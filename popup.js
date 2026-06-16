@@ -4,6 +4,18 @@ const BACKEND_URL = 'https://trystudysnap.com';
 
 document.addEventListener('DOMContentLoaded', async () => {
 
+  // ── i18n: localize static markup + helper for dynamic strings ──
+  const t = (k, subs) => chrome.i18n.getMessage(k, subs) || '';
+  document.querySelectorAll('[data-i18n]').forEach(el => {
+    const m = t(el.dataset.i18n); if (m) el.innerHTML = m;
+  });
+  document.querySelectorAll('[data-i18n-ph]').forEach(el => {
+    const m = t(el.dataset.i18nPh); if (m) el.placeholder = m;
+  });
+  document.querySelectorAll('[data-i18n-title]').forEach(el => {
+    const m = t(el.dataset.i18nTitle); if (m) el.title = m;
+  });
+
   // ── View refs ───────────────────────────────────────────────
   const viewLogin   = document.getElementById('viewLogin');
   const viewMain    = document.getElementById('viewMain');
@@ -100,7 +112,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   signInBtn.addEventListener('click', async () => {
     signInBtn.disabled = true;
-    signInBtn.querySelector('span').textContent = 'Opening…';
+    signInBtn.querySelector('span').textContent = t('opening');
     loginError.hidden = true;
 
     // Store referral code so background.js can claim it after sign-in
@@ -109,7 +121,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     chrome.runtime.sendMessage({ action: 'signIn' }, async (response) => {
       signInBtn.disabled = false;
-      signInBtn.querySelector('span').textContent = 'Continue with Google';
+      signInBtn.querySelector('span').textContent = t('continueWithGoogle');
 
       if (chrome.runtime.lastError || !response?.success) {
         const msg = response?.error || 'Sign-in failed. Please try again.';
@@ -179,7 +191,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         const limit = data.limit     ?? 5;
         const pct   = Math.min(100, Math.round((used / limit) * 100));
 
-        usageLabel.textContent = `${limit - used} capture${(limit - used) !== 1 ? 's' : ''} left today`;
+        usageLabel.textContent = t('capturesLeft', [String(limit - used)]);
         usageCount.textContent = `${used} / ${limit}`;
         usageFill.style.width  = `${pct}%`;
         usageFill.style.background =
@@ -194,7 +206,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         // cover it). Otherwise show the upgrade prompt and disable capture.
         if (used >= limit) {
           if (data.credits > 0) {
-            usageLabel.textContent = 'Free used — now spending credits';
+            usageLabel.textContent = t('freeUsedCredits');
             upgradePrompt.hidden = true;
             captureBtn.disabled  = false;
           } else {
@@ -253,7 +265,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     if (platform === 'copy') {
       await navigator.clipboard.writeText(`${SHARE_TEXT} ${url}`);
-      btn.textContent = '✓ Copied!';
+      btn.textContent = t('copied');
       setTimeout(() => { btn.innerHTML = '📋 Copy link <span class="platform-note">(Instagram · TikTok)</span>'; }, 2000);
     } else {
       chrome.tabs.create({ url: shareUrls[platform] });
@@ -273,13 +285,13 @@ document.addEventListener('DOMContentLoaded', async () => {
       });
       const data = await res.json();
       if (data.success) {
-        shareToggleBtn.textContent = '✓ +1 capture added!';
+        shareToggleBtn.textContent = t('plusOneAdded');
         shareToggleBtn.classList.add('share-claimed');
         sharePlatforms.hidden = true;
         captureBtn.disabled   = false;
         if (token) loadUsage(token);
       } else {
-        shareToggleBtn.textContent = '📢 Already shared today';
+        shareToggleBtn.textContent = t('alreadyShared');
       }
     } catch { /* silent */ }
   }
@@ -300,25 +312,25 @@ document.addEventListener('DOMContentLoaded', async () => {
     chrome.runtime.sendMessage({ action: 'captureAndAnalyze' }, (response) => {
       if (chrome.runtime.lastError) {
         setLoading(false);
-        showStatus('error', 'Extension error — please try again.');
+        showStatus('error', t('extError'));
         return;
       }
 
       setLoading(false);
 
       if (response?.success) {
-        showStatus('success', '✓ Answer ready — check the page!');
+        showStatus('success', t('answerReady'));
         setTimeout(() => window.close(), 1800);
       } else if (response?.limitReached) {
         upgradePrompt.hidden = false;
         captureBtn.disabled  = true;
-        showStatus('error', 'Daily limit reached.');
+        showStatus('error', t('dailyLimit'));
         // Reload usage bar
         chrome.storage.local.get('ss_access_token').then(({ ss_access_token: t }) => {
           if (t) loadUsage(t);
         });
       } else {
-        showStatus('error', response?.error || 'Something went wrong.');
+        showStatus('error', response?.error || t('somethingWrong'));
       }
     });
   });
@@ -335,7 +347,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     chrome.runtime.sendMessage({ action: 'askQuestion', question: q }, (response) => {
       if (chrome.runtime.lastError) {
         setLoading(false);
-        showStatus('error', 'Extension error — please try again.');
+        showStatus('error', t('extError'));
         return;
       }
 
@@ -343,16 +355,16 @@ document.addEventListener('DOMContentLoaded', async () => {
 
       if (response?.success) {
         askInput.value = '';
-        showStatus('success', '✓ Answer ready — check the page!');
+        showStatus('success', t('answerReady'));
         setTimeout(() => window.close(), 1800);
       } else if (response?.limitReached) {
         upgradePrompt.hidden = false;
-        showStatus('error', 'Daily limit reached.');
+        showStatus('error', t('dailyLimit'));
         chrome.storage.local.get('ss_access_token').then(({ ss_access_token: t }) => {
           if (t) loadUsage(t);
         });
       } else {
-        showStatus('error', response?.error || 'Something went wrong.');
+        showStatus('error', response?.error || t('somethingWrong'));
       }
     });
   }
@@ -364,7 +376,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     captureBtn.disabled = active;
     askBtn.disabled     = active;
     loadingEl.hidden    = !active;
-    btnText.textContent = active ? 'Analyzing…' : 'Capture Question';
+    btnText.textContent = active ? t('analyzingShort') : t('captureQuestion');
   }
 
   function showStatus(type, msg) {
@@ -420,9 +432,9 @@ document.addEventListener('DOMContentLoaded', async () => {
           const used  = data.usedToday ?? 0;
           const limit = data.limit     ?? 5;
           accountPlan.innerHTML = `
-            <div class="plan-badge free">Free Plan</div>
-            <p class="plan-note">${used} of ${limit} captures used today.${data.credits > 0 ? ` · 🪙 ${data.credits} credits` : ''}</p>
-            <button class="upgrade-btn" id="acctUpgradeBtn">☕ Support on Ko-fi</button>`;
+            <div class="plan-badge free">${t('planFreeName')}</div>
+            <p class="plan-note">${t('usedTodayCount', [String(used), String(limit)])}${data.credits > 0 ? ` · 🪙 ${data.credits} ${t('creditsWord')}` : ''}</p>
+            <button class="upgrade-btn" id="acctUpgradeBtn">${t('supportKofi')}</button>`;
 
           document.getElementById('acctUpgradeBtn')?.addEventListener('click', () => {
             upgradeBtn.click();
@@ -477,7 +489,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       historyList.innerHTML = `
         <div class="history-empty">
           <span class="history-empty-icon">📋</span>
-          No answers yet.<br>Capture a question to get started!
+          ${t('noAnswersYet')}
         </div>`;
       return;
     }
@@ -537,7 +549,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   clearHistoryBtn.addEventListener('click', async () => {
     if (!clearPending) {
       clearPending = true;
-      clearHistoryBtn.textContent = 'Tap again to clear';
+      clearHistoryBtn.textContent = t('tapAgainClear');
       clearHistoryBtn.classList.add('confirming');
       clearTimer = setTimeout(resetClearBtn, 2500);
       return;
