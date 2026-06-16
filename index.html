@@ -341,7 +341,7 @@
     /* RESPONSIVE */
     @media (max-width: 900px) {
       .hero-inner { grid-template-columns: 1fr; }
-      .overlay-mock { display: none; }
+      .hero-badge-wrap { max-width: 380px; margin: 14px auto 0; }
       .features-grid { grid-template-columns: repeat(2, 1fr); }
       .types-grid { grid-template-columns: repeat(2, 1fr); }
       .nav-links { display: none; }
@@ -385,7 +385,7 @@
     <div class="hero-glow-2"></div>
     <div class="container hero-inner">
       <div>
-        <div class="hero-tag"><span class="tag-dot"></span> v2.0 · No API Key · Sign in with Google</div>
+        <div class="hero-tag"><span class="tag-dot"></span> v2.1 · No API Key · Sign in with Google</div>
         <h1>Stop guessing.<br>Start <span class="highlight">understanding.</span></h1>
         <p class="hero-sub">StudySnap captures any quiz or study question on your screen and delivers an instant AI answer — with a clear explanation of <em>why</em> it's correct. No API key, no setup.</p>
         <div class="hero-ctas">
@@ -450,7 +450,7 @@
   <!-- STATS -->
   <div class="stats">
     <div class="container stats-inner">
-      <div class="stat"><div class="stat-num">7+</div><div class="stat-label">Question Types</div></div>
+      <div class="stat"><div class="stat-num">5</div><div class="stat-label">Question Types</div></div>
       <div class="stat-div"></div>
       <div class="stat"><div class="stat-num">~2s</div><div class="stat-label">Answer Time</div></div>
       <div class="stat-div"></div>
@@ -459,6 +459,40 @@
       <div class="stat"><div class="stat-num">Free</div><div class="stat-label">To Get Started</div></div>
     </div>
   </div>
+
+  <!-- 3D ROBOT (Whobee) — interactive Spline scene, lazy-loaded -->
+  <style>
+    .robot-section { position: relative; padding: 90px 0; border-top: 1px solid var(--border); }
+    .robot-inner { display: grid; grid-template-columns: 0.85fr 1.15fr; align-items: center; gap: 50px; }
+    .robot-copy h2 { font-size: 2.3rem; line-height: 1.15; margin: 16px 0 18px; }
+    .robot-stage {
+      position: relative; width: 100%; height: 460px;
+      border-radius: var(--radius); overflow: hidden;
+      background: radial-gradient(circle at 50% 40%, rgba(99,102,241,0.12), transparent 70%);
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer;
+    }
+    .robot-stage spline-viewer { width: 100%; height: 100%; display: block; }
+    .robot-stage .robot-loading { color: var(--muted); font-size: 0.85rem; }
+    @media (max-width: 860px) {
+      .robot-inner { grid-template-columns: 1fr; gap: 28px; }
+      .robot-stage { height: 340px; }
+      .robot-copy { text-align: center; }
+    }
+  </style>
+  <section class="robot-section">
+    <div class="container robot-inner">
+      <div class="robot-copy">
+        <div class="hero-tag"><span class="tag-dot"></span> Meet Whobee</div>
+        <h2>Your AI study buddy,<br><span class="highlight">always on.</span></h2>
+        <p class="hero-sub">Drag to spin him around 👆 — Whobee is the friendly face of StudySnap, here to help you <em>understand</em>, not just answer.</p>
+        <a href="https://chromewebstore.google.com/detail/studysnap/kodcbfiiefldhepmmjloifofmokhdekf" class="btn-main">⚡ Add to Chrome — Free</a>
+      </div>
+      <div class="robot-stage" id="whobee-stage" role="link" tabindex="0" aria-label="Add StudySnap to Chrome — opens the Chrome Web Store">
+        <span class="robot-loading">Loading Whobee…</span>
+      </div>
+    </div>
+  </section>
 
   <!-- FEATURES -->
   <section class="section">
@@ -469,6 +503,11 @@
         <p>Not just the answer — the understanding behind it.</p>
       </div>
       <div class="features-grid">
+        <div class="feat">
+          <div class="feat-icon">🎯</div>
+          <h3>Answers your whole quiz</h3>
+          <p>StudySnap finds <em>every</em> unanswered question on screen and answers them all at once — and automatically skips the ones you've already done.</p>
+        </div>
         <div class="feat">
           <div class="feat-icon">🔑</div>
           <h3>No API key needed</h3>
@@ -482,12 +521,12 @@
         <div class="feat">
           <div class="feat-icon">💡</div>
           <h3>Answer + explanation</h3>
-          <p>Every answer includes a "Why" explanation and an optional deep-dive for harder concepts.</p>
+          <p>Every answer includes a clear "Why" explanation, so you understand the reasoning — not just the result.</p>
         </div>
         <div class="feat">
           <div class="feat-icon">🧠</div>
           <h3>Smart model routing</h3>
-          <p>Regular questions use our fastest AI. Writing assignments automatically upgrade to our most capable model.</p>
+          <p>Most questions use our fast AI. When the answer isn't clear-cut, we automatically upgrade to our most capable model.</p>
         </div>
         <div class="feat">
           <div class="feat-icon">📊</div>
@@ -498,6 +537,16 @@
           <div class="feat-icon">📋</div>
           <h3>Answer history</h3>
           <p>Every captured answer is saved for review. Never lose a key insight again.</p>
+        </div>
+        <div class="feat">
+          <div class="feat-icon">⌨️</div>
+          <h3>Instant keyboard shortcut</h3>
+          <p>Press Ctrl/Cmd+Shift+K to capture and answer without opening any menu — the answer appears right on the page.</p>
+        </div>
+        <div class="feat">
+          <div class="feat-icon">💬</div>
+          <h3>Type your own question</h3>
+          <p>No question on the screen? Just type it into StudySnap and get an instant answer — then copy it with one click.</p>
         </div>
       </div>
     </div>
@@ -545,9 +594,7 @@
         <div class="type-chip"><span class="type-chip-icon">🔘</span> Multiple Choice (A/B/C/D)</div>
         <div class="type-chip"><span class="type-chip-icon">✅</span> True / False</div>
         <div class="type-chip"><span class="type-chip-icon">✏️</span> Fill in the Blank</div>
-        <div class="type-chip"><span class="type-chip-icon">📝</span> Sentence Completion</div>
         <div class="type-chip"><span class="type-chip-icon">💬</span> Short Answer</div>
-        <div class="type-chip"><span class="type-chip-icon">🔗</span> Matching Questions</div>
         <div class="type-chip"><span class="type-chip-icon">✍️</span> Writing Assignments</div>
       </div>
     </div>
@@ -558,8 +605,8 @@
     <div class="container">
       <div class="section-header">
         <div class="section-tag">✦ Pricing</div>
-        <h2>Start free. Upgrade when you're ready.</h2>
-        <p>All the power you need to ace your studies — free to try, affordable to keep.</p>
+        <h2>Free to use. Add credits when you need more.</h2>
+        <p>Everyone gets 5 captures a day, free. Want extra? Support StudySnap on Ko-fi and get monthly credits.</p>
       </div>
       <div class="pricing-grid">
 
@@ -569,44 +616,89 @@
             <div class="plan-name">Free</div>
             <div class="plan-price">
               <span class="plan-price-num">$0</span>
-              <span class="plan-price-per">/ month</span>
+              <span class="plan-price-per">/ forever</span>
             </div>
             <p class="plan-desc">Everything you need to get started — no credit card required.</p>
           </div>
           <div class="plan-features">
             <div class="plan-feat"><span class="plan-feat-icon">✓</span> 5 captures per day</div>
-            <div class="plan-feat"><span class="plan-feat-icon">✓</span> All 7+ question types</div>
-            <div class="plan-feat"><span class="plan-feat-icon">✓</span> Answer + explanation</div>
-            <div class="plan-feat"><span class="plan-feat-icon">✓</span> Confidence score</div>
-            <div class="plan-feat"><span class="plan-feat-icon">✓</span> Answer history</div>
+            <div class="plan-feat"><span class="plan-feat-icon">✓</span> Answers your whole quiz at once</div>
+            <div class="plan-feat"><span class="plan-feat-icon">✓</span> All 5 question types</div>
+            <div class="plan-feat"><span class="plan-feat-icon">✓</span> Answer + "why" explanation</div>
+            <div class="plan-feat"><span class="plan-feat-icon">✓</span> Confidence score &amp; history</div>
             <div class="plan-feat"><span class="plan-feat-icon">✓</span> Sign in with Google</div>
           </div>
           <a href="https://chromewebstore.google.com/detail/studysnap/kodcbfiiefldhepmmjloifofmokhdekf" class="plan-cta free">Get Started Free</a>
         </div>
 
-        <!-- PRO -->
+        <!-- CREDITS / KO-FI SUPPORT -->
         <div class="pricing-card pro">
-          <div class="pro-badge-tag">⚡ Most Popular</div>
+          <div class="pro-badge-tag">☕ Support us</div>
           <div>
-            <div class="plan-name">Pro</div>
-            <div class="plan-price">
-              <span class="plan-price-num">$4.99</span>
-              <span class="plan-price-per">/ month</span>
-            </div>
-            <p class="plan-desc">For serious students who study hard every day.</p>
+            <div class="plan-name">Need more captures?</div>
+            <p class="plan-desc" style="margin-top:10px">Support StudySnap on Ko-fi and get monthly <strong>credits</strong>. Each credit = one extra capture beyond your free 5/day — added to your account automatically.</p>
           </div>
           <div class="plan-features">
-            <div class="plan-feat"><span class="plan-feat-icon">✓</span> <strong>Unlimited</strong> captures per day</div>
-            <div class="plan-feat"><span class="plan-feat-icon">✓</span> All 7+ question types</div>
-            <div class="plan-feat"><span class="plan-feat-icon">✓</span> Answer + explanation</div>
-            <div class="plan-feat"><span class="plan-feat-icon">✓</span> Confidence score</div>
-            <div class="plan-feat"><span class="plan-feat-icon">✓</span> Answer history</div>
-            <div class="plan-feat"><span class="plan-feat-icon">✓</span> Sign in with Google</div>
-            <div class="plan-feat"><span class="plan-feat-icon">✓</span> Support StudySnap 🙏</div>
+            <div class="plan-feat"><span class="plan-feat-icon">⚡</span> <strong>Starter</strong> — $5/mo · 300 credits</div>
+            <div class="plan-feat"><span class="plan-feat-icon">📚</span> <strong>Pro</strong> — $10/mo · 500 credits</div>
+            <div class="plan-feat"><span class="plan-feat-icon">🌟</span> <strong>Elite</strong> — $15/mo · 1,200 credits</div>
+            <div class="plan-feat"><span class="plan-feat-icon">✓</span> Cancel anytime · supports a student dev 🙏</div>
           </div>
-          <a href="https://chromewebstore.google.com/detail/studysnap/kodcbfiiefldhepmmjloifofmokhdekf" class="plan-cta paid">Upgrade to Pro</a>
+          <a href="https://ko-fi.com/trystudysnap" class="plan-cta paid">☕ Support on Ko-fi</a>
         </div>
 
+      </div>
+    </div>
+  </section>
+
+  <!-- FAQ -->
+  <style>
+    .faq-section { padding: 100px 0; }
+    .faq-list { max-width: 720px; margin: 0 auto; display: flex; flex-direction: column; gap: 12px; }
+    .faq-item { background: var(--navy); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; transition: border-color 0.3s; }
+    .faq-item[open] { border-color: rgba(99,102,241,0.35); }
+    .faq-item summary {
+      list-style: none; cursor: pointer; padding: 18px 22px;
+      font-weight: 700; font-size: 0.95rem; color: var(--text);
+      display: flex; align-items: center; justify-content: space-between; gap: 14px;
+    }
+    .faq-item summary::-webkit-details-marker { display: none; }
+    .faq-item summary::after { content: '+'; color: var(--indigo); font-size: 1.4rem; font-weight: 400; line-height: 1; transition: transform 0.2s; }
+    .faq-item[open] summary::after { transform: rotate(45deg); }
+    .faq-a { padding: 0 22px 20px; color: var(--muted); font-size: 0.88rem; line-height: 1.75; }
+  </style>
+  <section class="faq-section" id="faq">
+    <div class="container">
+      <div class="section-header">
+        <div class="section-tag">✦ FAQ</div>
+        <h2>Questions? Answered.</h2>
+        <p>Everything you need to know before you install.</p>
+      </div>
+      <div class="faq-list">
+        <details class="faq-item">
+          <summary>Is StudySnap free?</summary>
+          <div class="faq-a">Yes. You get 5 captures every day for free — no credit card, no API key, no trial countdown. Need more? You can support StudySnap on Ko-fi and get monthly credits for extra captures.</div>
+        </details>
+        <details class="faq-item">
+          <summary>Is this cheating?</summary>
+          <div class="faq-a">StudySnap is built to help you <em>understand</em>, not just copy. Every answer comes with a clear "why" explanation and a confidence score so you actually learn the material — use it to check your work, study faster, and grasp tricky concepts.</div>
+        </details>
+        <details class="faq-item">
+          <summary>Does it work on my quiz or study site?</summary>
+          <div class="faq-a">Almost certainly. Because StudySnap reads what's on your screen, it works on virtually any site — Canvas, Moodle, Blackboard, Google Forms, Quizizz, and more — even when the quiz is embedded or the text can't be copied.</div>
+        </details>
+        <details class="faq-item">
+          <summary>Do you store my screenshots?</summary>
+          <div class="faq-a">No. Screenshots are sent for analysis and never stored on our servers. We only keep your answer history locally, on your own device, so you can review past captures.</div>
+        </details>
+        <details class="faq-item">
+          <summary>Do I need an OpenAI or API key?</summary>
+          <div class="faq-a">Nope. We handle the AI for you — just sign in with Google and start capturing. No accounts to create, no keys to paste, no extra cost.</div>
+        </details>
+        <details class="faq-item">
+          <summary>What languages does it support?</summary>
+          <div class="faq-a">Many. StudySnap answers in the same language as your question, so it works great for English, Spanish, and other languages — perfect for study materials in your own language.</div>
+        </details>
       </div>
     </div>
   </section>
@@ -621,7 +713,7 @@
         <a href="https://chromewebstore.google.com/detail/studysnap/kodcbfiiefldhepmmjloifofmokhdekf" class="btn-main">⚡ Add to Chrome — Free</a>
         <a href="#pricing" class="btn-sec">See pricing →</a>
       </div>
-      <p class="cta-note">Free: 5 captures/day &nbsp;·&nbsp; Pro: $4.99/mo unlimited &nbsp;·&nbsp; Works on any site</p>
+      <p class="cta-note">Free: 5 captures/day &nbsp;·&nbsp; Need more? Support on Ko-fi for credits &nbsp;·&nbsp; Works on any site</p>
     </div>
   </section>
 
@@ -646,33 +738,72 @@
     "applicationCategory": "EducationApplication",
     "operatingSystem": "Chrome",
     "description": "AI-powered Chrome extension that captures any quiz or study question and delivers instant answers with explanations. No API key needed — sign in with Google.",
-    "url": "https://studysnap-ai.github.io",
+    "url": "https://trystudysnap.com",
     "downloadUrl": "https://chromewebstore.google.com/detail/studysnap/kodcbfiiefldhepmmjloifofmokhdekf",
-    "screenshot": "https://studysnap-ai.github.io/icons/icon128.png",
-    "featureList": "Instant AI answers, Multiple choice, True/False, Fill in the blank, Confidence scores, Answer history, No API key required",
-    "offers": [
-      {
-        "@type": "Offer",
-        "name": "Free",
-        "price": "0",
-        "priceCurrency": "USD",
-        "description": "5 captures per day, all question types"
-      },
-      {
-        "@type": "Offer",
-        "name": "Pro",
-        "price": "4.99",
-        "priceCurrency": "USD",
-        "billingIncrement": "P1M",
-        "description": "Unlimited captures, Select Area tool, powered by GPT-4o"
-      }
-    ],
-    "aggregateRating": {
-      "@type": "AggregateRating",
-      "ratingValue": "5",
-      "ratingCount": "1"
+    "screenshot": "https://trystudysnap.com/icons/icon128.png",
+    "featureList": "Answers your whole quiz at once, Skips already-answered questions, Instant AI answers, Keyboard shortcut, Type your own question, Confidence scores, Answer history, No API key required",
+    "offers": {
+      "@type": "Offer",
+      "name": "Free",
+      "price": "0",
+      "priceCurrency": "USD",
+      "description": "5 captures per day, all question types. Optional Ko-fi credits for more."
     }
   }
+  </script>
+
+  <!-- Lazy-load the Spline 3D robot only when its section nears the viewport -->
+  <script>
+    (function () {
+      var stage = document.getElementById('whobee-stage');
+      if (!stage || !('IntersectionObserver' in window)) return;
+      var SCENE = 'https://prod.spline.design/PyzDhpQ9E5f1E3MT/scene.splinecode';
+      var loaded = false;
+
+      function loadRobot() {
+        if (loaded) return;
+        loaded = true;
+        var s = document.createElement('script');
+        s.type = 'module';
+        s.src  = 'https://unpkg.com/@splinetool/viewer/build/spline-viewer.js';
+        s.onload = function () {
+          var viewer = document.createElement('spline-viewer');
+          viewer.setAttribute('url', SCENE);
+          stage.innerHTML = '';
+          stage.appendChild(viewer);
+        };
+        s.onerror = function () {
+          stage.querySelector('.robot-loading').textContent = "Couldn't load Whobee — check your connection.";
+        };
+        document.head.appendChild(s);
+      }
+
+      var io = new IntersectionObserver(function (entries) {
+        if (entries.some(function (e) { return e.isIntersecting; })) {
+          loadRobot();
+          io.disconnect();
+        }
+      }, { rootMargin: '300px' });
+      io.observe(stage);
+
+      // Click (not drag) on Whobee → open the Chrome Web Store listing.
+      // Capture phase so we see the event even though the 3D viewer handles
+      // its own pointer events for rotation.
+      var STORE_URL = 'https://chromewebstore.google.com/detail/studysnap/kodcbfiiefldhepmmjloifofmokhdekf';
+      var downX = 0, downY = 0;
+      stage.addEventListener('pointerdown', function (e) { downX = e.clientX; downY = e.clientY; }, true);
+      stage.addEventListener('pointerup', function (e) {
+        var moved = Math.hypot(e.clientX - downX, e.clientY - downY);
+        if (moved < 8) window.open(STORE_URL, '_blank', 'noopener');  // a tap, not a spin
+      }, true);
+      // Keyboard access: Enter / Space on the focused robot opens the store
+      stage.addEventListener('keydown', function (e) {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          window.open(STORE_URL, '_blank', 'noopener');
+        }
+      });
+    })();
   </script>
 
 </body>
