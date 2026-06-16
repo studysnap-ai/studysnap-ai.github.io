@@ -210,35 +210,14 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
 
   // ────────────────────────────────────────────────────────────
-  // Upgrade to Pro
+  // Support on Ko-fi
   // ────────────────────────────────────────────────────────────
 
-  upgradeBtn.addEventListener('click', async () => {
-    upgradeBtn.disabled = true;
-    upgradeBtn.textContent = 'Opening checkout…';
-
-    try {
-      const { ss_access_token: token } = await chrome.storage.local.get('ss_access_token');
-      const res = await fetch(`${BACKEND_URL}/api/subscribe`, {
-        method:  'POST',
-        headers: {
-          'Content-Type':  'application/json',
-          'Authorization': `Bearer ${token}`,
-        },
-      });
-
-      const data = await res.json();
-      if (data.url) {
-        chrome.tabs.create({ url: data.url });
-        window.close();
-      } else {
-        upgradeBtn.textContent = 'Could not open checkout. Try again.';
-        upgradeBtn.disabled = false;
-      }
-    } catch {
-      upgradeBtn.textContent = 'Network error. Try again.';
-      upgradeBtn.disabled = false;
-    }
+  // Open the Ko-fi support page (credits model). Tip: sign up on Ko-fi with the
+  // same email you use here so credits apply automatically.
+  upgradeBtn.addEventListener('click', () => {
+    chrome.tabs.create({ url: 'https://ko-fi.com/trystudysnap' });
+    window.close();
   });
 
   // ────────────────────────────────────────────────────────────
@@ -442,8 +421,8 @@ document.addEventListener('DOMContentLoaded', async () => {
           const limit = data.limit     ?? 5;
           accountPlan.innerHTML = `
             <div class="plan-badge free">Free Plan</div>
-            <p class="plan-note">${used} of ${limit} captures used today.</p>
-            <button class="upgrade-btn" id="acctUpgradeBtn">Upgrade to Pro — $4.99/mo</button>`;
+            <p class="plan-note">${used} of ${limit} captures used today.${data.credits > 0 ? ` · 🪙 ${data.credits} credits` : ''}</p>
+            <button class="upgrade-btn" id="acctUpgradeBtn">☕ Support on Ko-fi</button>`;
 
           document.getElementById('acctUpgradeBtn')?.addEventListener('click', () => {
             upgradeBtn.click();
