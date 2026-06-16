@@ -3,3 +3,8 @@
 banner-*.html
 node_modules/
 *.log
+.env
+.env.*
+.vercel
+.env*
+!.env.example

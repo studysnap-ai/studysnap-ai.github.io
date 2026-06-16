@@ -153,6 +153,18 @@ document.addEventListener('DOMContentLoaded', async () => {
         await chrome.storage.local.set({ ss_user: data.user });
       }
 
+      // Ko-fi credits — show the badge whenever the user has any
+      const creditsWrap  = document.getElementById('creditsWrap');
+      const creditsCount = document.getElementById('creditsCount');
+      if (creditsWrap && creditsCount) {
+        if (data.credits > 0) {
+          creditsCount.textContent = data.credits;
+          creditsWrap.hidden = false;
+        } else {
+          creditsWrap.hidden = true;
+        }
+      }
+
       if (data.isPro) {
         const used = data.usedThisMonth ?? 0;
         proBadgeWrap.querySelector('.pro-badge').textContent =
@@ -178,10 +190,17 @@ document.addEventListener('DOMContentLoaded', async () => {
         usageWrap.hidden    = false;
         proBadgeWrap.hidden = true;
 
-        // Auto-show upgrade prompt if limit is hit
+        // Free used up: if the user has Ko-fi credits, keep capturing (credits
+        // cover it). Otherwise show the upgrade prompt and disable capture.
         if (used >= limit) {
-          upgradePrompt.hidden = false;
-          captureBtn.disabled  = true;
+          if (data.credits > 0) {
+            usageLabel.textContent = 'Free used — now spending credits';
+            upgradePrompt.hidden = true;
+            captureBtn.disabled  = false;
+          } else {
+            upgradePrompt.hidden = false;
+            captureBtn.disabled  = true;
+          }
         }
       }
 
