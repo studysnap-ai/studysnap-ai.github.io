@@ -32,7 +32,7 @@
     <p>StudySnap is a Chrome extension that helps students answer study and quiz questions using AI. This policy explains exactly what data we collect, how it flows, and what we never do.</p>
 
     <div class="highlight">
-      <p><strong>Summary:</strong> We collect only what is necessary to provide the service — your Google account info for sign-in, a count of how many captures you have used today, and your subscription status. We never store your screenshots. We never sell your data.</p>
+      <p><strong>Summary:</strong> We collect only what is necessary to provide the service — your Google account info for sign-in, a count of how many captures you have used today, your subscription status, and any support credits on your account. We never store your screenshots. We never sell your data.</p>
     </div>
 
     <h2>1. How the extension works</h2>
@@ -51,9 +51,10 @@
       <li>A daily count of how many captures you have used. This is used to enforce the free tier limit (5 captures/day) and reset it each day. No content of captures is stored — only the count.</li>
     </ul>
 
-    <p><strong>Subscription status (stored in Supabase):</strong></p>
+    <p><strong>Subscription &amp; credits (stored in Supabase):</strong></p>
     <ul>
-      <li>Whether you have an active Pro subscription. Managed through Stripe. We store your subscription status and renewal date — not your payment details (those remain with Stripe).</li>
+      <li>Your subscription status and renewal date, if applicable. We store your status — never your card details (those stay with the payment provider).</li>
+      <li>Your StudySnap credit balance. If you support us on Ko-fi, Ko-fi sends us the email and transaction details for your payment so we can add credits to your account. We store your credit balance and a record of the transaction (email, tier name, amount, transaction ID). We never receive or store your card details.</li>
     </ul>
 
     <p><strong>Local device storage (stored in <code>chrome.storage.local</code> on your device only):</strong></p>
@@ -74,10 +75,11 @@
     <h2>4. Third-party services</h2>
     <p>StudySnap relies on the following third-party services to operate:</p>
     <ul>
-      <li><strong>Supabase</strong> — Authentication and database hosting. Stores your account info, usage counts, and subscription status. <a href="https://supabase.com/privacy" target="_blank">Supabase Privacy Policy</a></li>
+      <li><strong>Supabase</strong> — Authentication and database hosting. Stores your account info, usage counts, subscription status, and credit balance. <a href="https://supabase.com/privacy" target="_blank">Supabase Privacy Policy</a></li>
       <li><strong>Vercel</strong> — Hosts our API server. Screenshots pass through Vercel transiently and are not stored. <a href="https://vercel.com/legal/privacy-policy" target="_blank">Vercel Privacy Policy</a></li>
       <li><strong>OpenAI</strong> — Processes screenshots to generate answers. Screenshots are sent to OpenAI's API under their terms. <a href="https://openai.com/privacy" target="_blank">OpenAI Privacy Policy</a></li>
-      <li><strong>Stripe</strong> — Handles payment processing for Pro subscriptions. We never see or store your credit card details. <a href="https://stripe.com/privacy" target="_blank">Stripe Privacy Policy</a></li>
+      <li><strong>Ko-fi</strong> — Handles donations and memberships that grant StudySnap credits. Ko-fi sends us the supporter's email and transaction details so we can apply credits; we never see or store your card details. <a href="https://more.ko-fi.com/privacy" target="_blank">Ko-fi Privacy Policy</a></li>
+      <li><strong>Stripe</strong> — Payment processor used for card payments. We never see or store your card details. <a href="https://stripe.com/privacy" target="_blank">Stripe Privacy Policy</a></li>
       <li><strong>Google</strong> — Used for sign-in via OAuth. We receive your name, email, and profile photo from Google. <a href="https://policies.google.com/privacy" target="_blank">Google Privacy Policy</a></li>
     </ul>
 
