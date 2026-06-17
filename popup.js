@@ -16,6 +16,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     await ssSetLang(ssGetLang() === 'es' ? 'en' : 'es');
     renderLangToggle();
     renderLoginLangToggle();
+    // Re-populate usage bar with translated strings
+    const { ss_access_token: tok } = await chrome.storage.local.get('ss_access_token');
+    if (tok) loadUsage(tok);
   });
 
   // Login-view lang toggle — same logic, keeps both in sync
@@ -84,6 +87,9 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   if (token) {
     showView(viewMain);
+    // Show usage bar immediately with loading state while we fetch real data
+    usageLabel.textContent = t('loading');
+    usageWrap.hidden = false;
     // Ask background to refresh token if expired, then load usage
     chrome.runtime.sendMessage({ action: 'getValidToken' }, ({ token: freshToken } = {}) => {
       loadUsage(freshToken || token);
@@ -219,16 +225,17 @@ document.addEventListener('DOMContentLoaded', async () => {
         // Ko-fi credit holders unlock region capture (their perk for supporting)
         selectBtn.hidden = (data.credits ?? 0) <= 0;
 
+        // Reset limit state when usage is refreshed (handles midnight reset)
+        if (used < limit) clearLimit();
+
         // Free used up: if the user has Ko-fi credits, keep capturing (credits
         // cover it). Otherwise show the upgrade prompt and disable capture.
         if (used >= limit) {
           if (data.credits > 0) {
             usageLabel.textContent = t('freeUsedCredits');
-            upgradePrompt.hidden = true;
-            captureBtn.disabled  = false;
+            clearLimit();
           } else {
-            upgradePrompt.hidden = false;
-            captureBtn.disabled  = true;
+            setLimitReached();
           }
         }
       }
@@ -339,10 +346,8 @@ document.addEventListener('DOMContentLoaded', async () => {
         showStatus('success', t('answerReady'));
         setTimeout(() => window.close(), 1800);
       } else if (response?.limitReached) {
-        upgradePrompt.hidden = false;
-        captureBtn.disabled  = true;
+        setLimitReached();
         showStatus('error', t('dailyLimit'));
-        // Reload usage bar
         chrome.storage.local.get('ss_access_token').then(({ ss_access_token: tok }) => {
           if (tok) loadUsage(tok);
         });
@@ -354,12 +359,12 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   // ── Type-your-own-question ──────────────────────────────────
   function submitQuestion() {
+    if (limitHit) return; // guard: don't allow submission when limit is active
     const q = askInput.value.trim();
     if (!q) { askInput.focus(); return; }
 
     setLoading(true);
     clearStatus();
-    upgradePrompt.hidden = true;
 
     chrome.runtime.sendMessage({ action: 'askQuestion', question: q }, (response) => {
       if (chrome.runtime.lastError) {
@@ -375,7 +380,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         showStatus('success', t('answerReady'));
         setTimeout(() => window.close(), 1800);
       } else if (response?.limitReached) {
-        upgradePrompt.hidden = false;
+        setLimitReached();
         showStatus('error', t('dailyLimit'));
         chrome.storage.local.get('ss_access_token').then(({ ss_access_token: tok }) => {
           if (tok) loadUsage(tok);
@@ -389,11 +394,45 @@ document.addEventListener('DOMContentLoaded', async () => {
   askBtn.addEventListener('click', submitQuestion);
   askInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') submitQuestion(); });
 
+  // Track whether daily limit is currently active so setLoading(false)
+  // doesn't accidentally re-enable the buttons when the limit is still hit.
+  let limitHit = false;
+
+  function setLimitReached() {
+    limitHit = true;
+    captureBtn.disabled = true;
+    askBtn.disabled     = true;
+    askInput.disabled   = true;
+    // Only show upgrade prompt if spinner isn't active; setLoading(false) will
+    // reveal it when the in-flight request finishes.
+    if (loadingEl.hidden) {
+      upgradePrompt.hidden = false;
+    }
+  }
+
+  function clearLimit() {
+    limitHit = false;
+    captureBtn.disabled  = false;
+    askBtn.disabled      = false;
+    askInput.disabled    = false;
+    upgradePrompt.hidden = true;
+  }
+
   function setLoading(active) {
-    captureBtn.disabled = active;
-    askBtn.disabled     = active;
     loadingEl.hidden    = !active;
     btnText.textContent = active ? t('analyzingShort') : t('captureQuestion');
+    if (active) {
+      captureBtn.disabled  = true;
+      askBtn.disabled      = true;
+      upgradePrompt.hidden = true; // never overlap spinner with upgrade prompt
+    } else {
+      if (limitHit) {
+        upgradePrompt.hidden = false; // spinner done, limit still active → show prompt
+      } else {
+        captureBtn.disabled = false;
+        askBtn.disabled     = false;
+      }
+    }
   }
 
   function showStatus(type, msg) {
