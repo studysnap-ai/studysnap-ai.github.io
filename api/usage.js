@@ -24,6 +24,7 @@ export default async function handler(req, res) {
   if (!user) return res.status(401).json({ error: 'Invalid or expired token.' });
 
   try {
+    console.log('[SS:u1]');
     const today = new Date().toISOString().split('T')[0];
 
     // isPro = active Stripe subscription (dormant — always false while Stripe
@@ -40,6 +41,7 @@ export default async function handler(req, res) {
     await supabase.rpc('apply_pending_credits', { p_user_id: user.id, p_email: user.email })
       .catch((e) => { console.error('[SS] apply_pending_credits error:', e?.message); });
 
+    console.log('[SS:u2]');
     const [usageResult, bonusResult, monthlyResult, creditsResult] = await Promise.all([
       supabase.rpc('get_usage',         { p_user_id: user.id, p_date: today }),
       supabase.rpc('get_bonus',         { p_user_id: user.id, p_date: today }),
@@ -72,7 +74,8 @@ export default async function handler(req, res) {
     });
 
   } catch (err) {
-    console.error('[StudySnap API] usage error:', err?.message ?? String(err), err?.stack ?? '');
+    const msg = err?.message ?? String(err);
+    console.error('[SS:usage:catch]', msg.slice(0, 300));
     return res.status(500).json({ error: 'Something went wrong.' });
   }
 }
