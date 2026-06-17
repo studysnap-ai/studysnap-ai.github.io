@@ -18,7 +18,8 @@ body {
 
 /* ── View switching ──────────────────────────────────────────── */
 
-.view[hidden] { display: none; }
+.view[hidden]    { display: none; }
+.loading[hidden] { display: none; }
 
 @keyframes slideInRight {
   from { opacity: 0; transform: translateX(18px); }
