@@ -24,37 +24,28 @@ export default async function handler(req, res) {
   if (!user) return res.status(401).json({ error: 'Invalid or expired token.' });
 
   try {
-    console.log('[usage] A: start');
     const today = new Date().toISOString().split('T')[0];
 
-    // Check subscription via SECURITY DEFINER RPC (bypasses RLS)
-    console.log('[usage] B: calling get_subscription');
-    const subResult = await supabase.rpc('get_subscription', { p_user_id: user.id });
-    console.log('[usage] C: sub done, error=', subResult.error?.message ?? 'none');
-    const status = subResult.data;
-    const isPro = status === 'active';
+    // isPro = active Stripe subscription (dormant — always false while Stripe
+    // is paused). Ko-fi credits are handled separately below.
+    const isPro = false;
+    // Uncomment when Stripe is re-enabled:
+    // const { data: status } = await supabase.rpc('get_subscription', { p_user_id: user.id });
+    // const isPro = status === 'active';
 
     const monthStart = today.slice(0, 7) + '-01';
 
     // Apply any Ko-fi credits that arrived before this account existed (atomic,
     // no-op if none). Runs on every popup open — our de-facto "on login" hook.
-    console.log('[usage] D: calling apply_pending_credits');
     await supabase.rpc('apply_pending_credits', { p_user_id: user.id, p_email: user.email })
-      .catch((e) => { console.log('[usage] D-catch:', e?.message); });
+      .catch((e) => { console.error('[SS] apply_pending_credits error:', e?.message); });
 
-    console.log('[usage] E: calling Promise.all RPCs');
     const [usageResult, bonusResult, monthlyResult, creditsResult] = await Promise.all([
       supabase.rpc('get_usage',         { p_user_id: user.id, p_date: today }),
       supabase.rpc('get_bonus',         { p_user_id: user.id, p_date: today }),
       supabase.rpc('get_monthly_usage', { p_user_id: user.id, p_month_start: monthStart }),
       supabase.rpc('get_user_credits',  { p_user_id: user.id }),
     ]);
-    console.log('[usage] F: RPCs done',
-      'usage_err=', usageResult.error?.message ?? 'ok',
-      'bonus_err=', bonusResult.error?.message ?? 'ok',
-      'monthly_err=', monthlyResult.error?.message ?? 'ok',
-      'credits_err=', creditsResult.error?.message ?? 'ok',
-    );
     const usedToday   = usageResult.data;
     const bonus       = bonusResult.data;
     const monthlyUsed = monthlyResult.data;
