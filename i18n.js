@@ -32,10 +32,22 @@
     return e ? e.message : null;
   }
 
+  function lookupEntry(lang, key) {
+    return (state.dict[lang] && state.dict[lang][key]) || null;
+  }
+
   function ssT(key, subs) {
-    let m = lookup(state.lang, key);
-    if (m == null) m = lookup('en', key);
-    if (m == null) return '';
+    let entry = lookupEntry(state.lang, key) || lookupEntry('en', key);
+    if (!entry) return '';
+    let m = entry.message;
+    // Resolve Chrome named placeholders ($name$) using the placeholders field
+    if (entry.placeholders) {
+      Object.keys(entry.placeholders).forEach(name => {
+        const content = entry.placeholders[name].content; // e.g. "$1"
+        m = m.replace(new RegExp('\\$' + name + '\\$', 'gi'), content);
+      });
+    }
+    // Resolve positional substitutions ($1, $2, …)
     if (Array.isArray(subs)) subs.forEach((v, i) => { m = m.replace('$' + (i + 1), v); });
     return m;
   }
