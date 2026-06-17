@@ -210,6 +210,11 @@ export default async function handler(req, res) {
       }
     }
 
+    // ── Apply any pending Ko-fi credits ─────────────────────────────────────────
+    // Fire-and-forget: must not block the capture if it hangs or fails.
+    supabase.rpc('apply_pending_credits', { p_user_id: user.id, p_email: user.email })
+      .catch((e) => { console.error('[SS] apply_pending_credits:', e?.message); });
+
     // ── Free tier limit, then Ko-fi credits ────────────────────────────────────
     // Only CHECK here. We charge *after* a successful AI call so a failed capture
     // never costs a free capture or a credit. Spend order: free daily first, then
