@@ -4,16 +4,17 @@ const BACKEND_URL = 'https://trystudysnap.com';
 
 document.addEventListener('DOMContentLoaded', async () => {
 
-  // ── i18n: localize static markup + helper for dynamic strings ──
-  const t = (k, subs) => chrome.i18n.getMessage(k, subs) || '';
-  document.querySelectorAll('[data-i18n]').forEach(el => {
-    const m = t(el.dataset.i18n); if (m) el.innerHTML = m;
-  });
-  document.querySelectorAll('[data-i18n-ph]').forEach(el => {
-    const m = t(el.dataset.i18nPh); if (m) el.placeholder = m;
-  });
-  document.querySelectorAll('[data-i18n-title]').forEach(el => {
-    const m = t(el.dataset.i18nTitle); if (m) el.title = m;
+  // ── i18n: load + apply translations (supports the manual EN/ES toggle) ──
+  await ssInitI18n();
+  const t = (k, subs) => ssT(k, subs);
+
+  // Language toggle (🌐) — flips EN ⇄ ES instantly and remembers the choice.
+  const langToggle = document.getElementById('langToggle');
+  const renderLangToggle = () => { if (langToggle) langToggle.textContent = ssGetLang() === 'es' ? 'EN' : 'ES'; };
+  renderLangToggle();
+  langToggle?.addEventListener('click', async () => {
+    await ssSetLang(ssGetLang() === 'es' ? 'en' : 'es');
+    renderLangToggle();
   });
 
   // ── View refs ───────────────────────────────────────────────

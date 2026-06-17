@@ -7,8 +7,23 @@
   if (window.__studySnapLoaded) return;
   window.__studySnapLoaded = true;
 
-  // i18n helper — localizes the overlay to the user's browser language
-  const t = (k) => chrome.i18n.getMessage(k) || '';
+  // ── i18n: overlay strings, honoring the popup's manual EN/ES choice ─────────
+  const OV = {
+    en: { ovAnswer:'Answer', ovWhy:'Why', ovConfidence:'Confidence', ovHigh:'High confidence', ovMedium:'Medium confidence', ovLow:'Low confidence', ovWasCorrect:'Was this correct?', ovMarkedCorrect:'✓ Marked correct', ovMarkedIncorrect:'✗ Marked incorrect', ovNoQuestions:'No unanswered questions detected on screen.', ovSelectOnPage:'Select on page', ovCopy:'Copy', ovCopied:'✓ Copied' },
+    es: { ovAnswer:'Respuesta', ovWhy:'Por qué', ovConfidence:'Confianza', ovHigh:'Alta confianza', ovMedium:'Confianza media', ovLow:'Confianza baja', ovWasCorrect:'¿Fue correcto?', ovMarkedCorrect:'✓ Marcado correcto', ovMarkedIncorrect:'✗ Marcado incorrecto', ovNoQuestions:'No se detectaron preguntas sin responder en pantalla.', ovSelectOnPage:'Selecciona en la página', ovCopy:'Copiar', ovCopied:'✓ Copiado' },
+  };
+  let ssLang = 'en';
+  const t = (k) => (OV[ssLang] && OV[ssLang][k]) || OV.en[k] || '';
+
+  // Resolve the saved language (set by the popup toggle); fall back to browser.
+  async function resolveLang() {
+    try {
+      const got = await chrome.storage.local.get('ss_lang');
+      if (got.ss_lang === 'es' || got.ss_lang === 'en') return got.ss_lang;
+    } catch {}
+    const ui = (chrome.i18n.getUILanguage() || 'en').toLowerCase();
+    return ui.startsWith('es') ? 'es' : 'en';
+  }
 
   let overlayEl = null;
 
@@ -16,8 +31,12 @@
 
   chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     if (message.action === 'showOverlay') {
-      renderOverlay(message.data);
-      sendResponse({ ok: true });
+      resolveLang().then(l => {
+        ssLang = l;
+        renderOverlay(message.data);
+        sendResponse({ ok: true });
+      });
+      return true; // keep the channel open for the async (storage) response
     }
     if (message.action === 'hideOverlay') {
       if (overlayEl) { overlayEl.remove(); overlayEl = null; }
