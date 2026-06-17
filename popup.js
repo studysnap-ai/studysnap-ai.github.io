@@ -487,8 +487,17 @@ document.addEventListener('DOMContentLoaded', async () => {
         } else {
           const used  = data.usedToday ?? 0;
           const limit = data.limit     ?? 5;
+
+          // Ko-fi supporter badge — keyed to highest tier ever purchased
+          const KOFI_BADGES = {
+            'Elite 🌟 1200 Credits':  { cls: 'kofi-elite',   label: '🌟 Elite Supporter'  },
+            'Pro 📚 500 Credits':     { cls: 'kofi-pro',     label: '📚 Pro Supporter'     },
+            'Starter ⚡ 300 Credits': { cls: 'kofi-starter', label: '⚡ Starter Supporter' },
+          };
+          const kbadge = KOFI_BADGES[data.kofiTier];
+
           accountPlan.innerHTML = `
-            <div class="plan-badge free">${t('planFreeName')}</div>
+            <div class="plan-badge ${kbadge ? kbadge.cls : 'free'}">${kbadge ? kbadge.label : t('planFreeName')}</div>
             <p class="plan-note">${t('usedTodayCount', [String(used), String(limit)])}${data.credits > 0 ? ` · 🪙 ${data.credits} ${t('creditsWord')}` : ''}</p>
             <button class="upgrade-btn" id="acctUpgradeBtn">${t('supportKofi')}</button>`;
 

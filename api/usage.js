@@ -35,16 +35,18 @@ export default async function handler(req, res) {
 
     const monthStart = today.slice(0, 7) + '-01';
 
-    const [usageResult, bonusResult, monthlyResult, creditsResult] = await Promise.all([
+    const [usageResult, bonusResult, monthlyResult, creditsResult, tierResult] = await Promise.all([
       supabase.rpc('get_usage',         { p_user_id: user.id, p_date: today }),
       supabase.rpc('get_bonus',         { p_user_id: user.id, p_date: today }),
       supabase.rpc('get_monthly_usage', { p_user_id: user.id, p_month_start: monthStart }),
       supabase.rpc('get_user_credits',  { p_user_id: user.id }),
+      supabase.rpc('get_kofi_tier',     { p_email: user.email }),
     ]);
     const usedToday   = usageResult.data;
     const bonus       = bonusResult.data;
     const monthlyUsed = monthlyResult.data;
     const credits     = creditsResult.data;
+    const kofiTier    = tierResult.data ?? null;
 
     const count          = usedToday  ?? 0;
     const bonusCaptures  = bonus      ?? 0;
@@ -58,6 +60,7 @@ export default async function handler(req, res) {
       bonus:        bonusCaptures,
       remaining:    isPro ? null : Math.max(0, effectiveLimit - count),
       credits:      credits ?? 0,
+      kofiTier,
       user: {
         id:     user.id,
         email:  user.email,
