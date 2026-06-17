@@ -27,9 +27,9 @@ export default async function handler(req, res) {
     const today = new Date().toISOString().split('T')[0];
 
     // Check subscription via SECURITY DEFINER RPC (bypasses RLS)
-    const { data: status } = await supabase.rpc('get_subscription', {
-      p_user_id: user.id,
-    });
+    const subResult = await supabase.rpc('get_subscription', { p_user_id: user.id });
+    if (subResult.error) console.error('[usage] get_subscription error:', subResult.error.message);
+    const status = subResult.data;
     const isPro = status === 'active';
 
     const monthStart = today.slice(0, 7) + '-01';
@@ -39,12 +39,20 @@ export default async function handler(req, res) {
     await supabase.rpc('apply_pending_credits', { p_user_id: user.id, p_email: user.email })
       .catch(() => {});
 
-    const [{ data: usedToday }, { data: bonus }, { data: monthlyUsed }, { data: credits }] = await Promise.all([
+    const [usageResult, bonusResult, monthlyResult, creditsResult] = await Promise.all([
       supabase.rpc('get_usage',         { p_user_id: user.id, p_date: today }),
       supabase.rpc('get_bonus',         { p_user_id: user.id, p_date: today }),
       supabase.rpc('get_monthly_usage', { p_user_id: user.id, p_month_start: monthStart }),
       supabase.rpc('get_user_credits',  { p_user_id: user.id }),
     ]);
+    if (usageResult.error)   console.error('[usage] get_usage error:',         usageResult.error.message);
+    if (bonusResult.error)   console.error('[usage] get_bonus error:',         bonusResult.error.message);
+    if (monthlyResult.error) console.error('[usage] get_monthly_usage error:', monthlyResult.error.message);
+    if (creditsResult.error) console.error('[usage] get_user_credits error:',  creditsResult.error.message);
+    const usedToday  = usageResult.data;
+    const bonus      = bonusResult.data;
+    const monthlyUsed = monthlyResult.data;
+    const credits    = creditsResult.data;
 
     const count          = usedToday  ?? 0;
     const bonusCaptures  = bonus      ?? 0;
@@ -67,7 +75,7 @@ export default async function handler(req, res) {
     });
 
   } catch (err) {
-    console.error('[StudySnap API] usage error:', err);
+    console.error('[StudySnap API] usage error:', err?.message ?? String(err), err?.stack ?? '');
     return res.status(500).json({ error: 'Something went wrong.' });
   }
 }
