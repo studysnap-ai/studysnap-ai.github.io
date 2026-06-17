@@ -8,7 +8,7 @@
 //   Threshold: any question confidence < 70 triggers the upgrade
 
 import { createClient } from '@supabase/supabase-js';
-import { verifyUser } from './_auth.js';
+import { verifyUser, bearerToken } from './_auth.js';
 import { FREE_LIMIT, PRO_MONTHLY_LIMIT } from './_config.js';
 
 const supabase = createClient(
@@ -35,7 +35,6 @@ OUTPUT — respond ONLY with valid JSON (no markdown, no code fences):
       "questionType": "mcq" | "truefalse" | "fillin" | "short" | "writing" | "none",
       "why": "1-2 sentence reasoning for this specific question",
       "answer": "the correct answer — must match what 'why' supports",
-      "deepExplanation": "",
       "confidence": 0-100
     }
   ]
@@ -47,7 +46,8 @@ CRITICAL RULES:
 - Include one entry per unanswered question, in order of appearance.
 - If no unanswered questions are visible, return { "questions": [] }.
 - The "answer" and "why" fields must always refer to the same question.
-- Plain text answers only (no HTML) unless it is a writing/essay assignment.`;
+- Plain text answers only (no HTML) unless it is a writing/essay assignment.
+- MATH AND FORMULAS: Express math using Unicode symbols (×, ÷, ±, √, π, ², ³, ∑, ∫, ≠, ≤, ≥, ∞, θ, Δ) rather than LaTeX (\\frac, \\sqrt) or plain ASCII (^2, x/y). The answer renders as plain text, so Unicode is the best format for readability.`;
 
 // ── OpenAI helper ────────────────────────────────────────────────────────────
 
@@ -108,6 +108,8 @@ ${pageText}`
 
 const TEXT_SYSTEM_PROMPT = `You are StudySnap, an AI study assistant. Answer the student's question clearly and correctly, in the same language as the question.
 
+For math or science questions, use Unicode symbols (×, ÷, ±, √, π, ², ³, ∑, ∫, ≠, ≤, ≥, ∞, θ, Δ) instead of LaTeX or plain ASCII. The answer is displayed as plain text, so Unicode is the best format.
+
 Respond ONLY with valid JSON (no markdown, no code fences):
 {
   "questions": [
@@ -115,7 +117,6 @@ Respond ONLY with valid JSON (no markdown, no code fences):
       "questionType": "short",
       "why": "1-2 sentence reasoning",
       "answer": "the direct answer",
-      "deepExplanation": "",
       "confidence": 0-100
     }
   ]
@@ -163,22 +164,32 @@ export default async function handler(req, res) {
   if (req.method !== 'POST')    return res.status(405).json({ error: 'Method not allowed' });
 
   try {
-    const { imageDataUrl, token, pageText = null, precise = false, question = null } = req.body;
+    const { imageDataUrl, pageText = null, precise = false, question = null } = req.body;
     const textMode = !imageDataUrl && typeof question === 'string' && question.trim().length > 0;
     if (!imageDataUrl && !textMode) return res.status(400).json({ error: 'No image or question provided.' });
 
-    // ── Auth: verify user token ──────────────────────────────────────────────
-    let user   = null;
-    let isPro  = false;
-
-    if (token) {
-      user = await verifyUser(token);
-
-      if (user) {
-        const { data: status } = await supabase.rpc('get_subscription', { p_user_id: user.id });
-        isPro = status === 'active';
-      }
+    // ── Image size guard (Vercel body limit ≈ 4.5 MB) ────────────────────────
+    // base64 is ~4/3 of raw bytes, so a 4 MB base64 string ≈ 3 MB actual image.
+    // Reject early with a user-friendly message rather than letting Vercel 413.
+    if (imageDataUrl && imageDataUrl.length > 4 * 1024 * 1024) {
+      return res.status(413).json({
+        error: 'Screenshot is too large. Try zooming out, scrolling to show fewer questions, or use ✂ Select Area to capture a smaller region.',
+      });
     }
+
+    // ── Auth: require a verified user — no anonymous captures ───────────────
+    const token = bearerToken(req);
+    const user  = await verifyUser(token);
+    if (!user) {
+      return res.status(401).json({ error: 'Sign in to use StudySnap.' });
+    }
+
+    // isPro = active Stripe subscription (dormant — always false while Stripe
+    // is paused). Ko-fi credits are handled separately below.
+    let isPro = false;
+    // Uncomment when Stripe is re-enabled:
+    // const { data: status } = await supabase.rpc('get_subscription', { p_user_id: user.id });
+    // isPro = status === 'active';
 
     // ── Pro monthly cap ───────────────────────────────────────────────────────
     if (user && isPro) {
@@ -203,24 +214,26 @@ export default async function handler(req, res) {
     // Only CHECK here. We charge *after* a successful AI call so a failed capture
     // never costs a free capture or a credit. Spend order: free daily first, then
     // Ko-fi credits. (Stripe Pro users are unlimited and never reach this block.)
-    let useCredit = false;
-    if (user && !isPro) {
+    let useCredit    = false;
+    let kofiCredits  = 0; // tracked here so model routing can use it
+    if (!isPro) {
       const today = new Date().toISOString().split('T')[0];
 
-      const [{ data: usageCount }, { data: shareBonus }] = await Promise.all([
-        supabase.rpc('get_usage', { p_user_id: user.id, p_date: today }),
-        supabase.rpc('get_bonus', { p_user_id: user.id, p_date: today }),
+      const [{ data: usageCount }, { data: shareBonus }, { data: credits }] = await Promise.all([
+        supabase.rpc('get_usage',        { p_user_id: user.id, p_date: today }),
+        supabase.rpc('get_bonus',        { p_user_id: user.id, p_date: today }),
+        supabase.rpc('get_user_credits', { p_user_id: user.id }),
       ]);
 
-      const todayCount     = usageCount ?? 0;
+      kofiCredits          = credits     ?? 0;
+      const todayCount     = usageCount  ?? 0;
       const effectiveLimit = FREE_LIMIT + (shareBonus ?? 0);
 
       if (todayCount >= effectiveLimit) {
         // Free allowance used up — fall back to Ko-fi credits if the user has any
-        const { data: credits } = await supabase.rpc('get_user_credits', { p_user_id: user.id });
-        if ((credits ?? 0) <= 0) {
+        if (kofiCredits <= 0) {
           return res.status(429).json({
-            error: `Free limit reached (${effectiveLimit}/day) and no credits left. Get credits on Ko-fi or upgrade to Pro.`,
+            error: `Free limit reached (${effectiveLimit}/day) and no credits left. Get credits on Ko-fi to keep going!`,
             limitReached: true,
           });
         }
@@ -232,20 +245,24 @@ export default async function handler(req, res) {
     let result;
     let upgraded = false;
 
+    // Ko-fi credit holders get gpt-4o on region captures (their perk for supporting).
+    // Stripe Pro (when re-enabled) gets gpt-4o always.
+    const hasKofiCredits = kofiCredits > 0 || useCredit;
+
     if (textMode) {
-      // Typed question (no screenshot). Pro gets gpt-4o; free starts on mini and
-      // escalates if unsure.
-      const model = isPro ? 'gpt-4o' : 'gpt-4o-mini';
+      // Typed question (no screenshot). Credit/Pro users get gpt-4o directly;
+      // free users start on mini and escalate on low confidence.
+      const model = (isPro || hasKofiCredits) ? 'gpt-4o' : 'gpt-4o-mini';
       result = await callOpenAIText(model, question.trim());
-      if (!isPro) {
+      if (!isPro && !hasKofiCredits) {
         const lowConf = (result.questions ?? []).some(q => (q.confidence ?? 100) < 70);
         if (lowConf) { result = await callOpenAIText('gpt-4o', question.trim()); upgraded = true; }
       } else {
         upgraded = true;
       }
-    } else if (isPro || precise) {
+    } else if (isPro || (precise && hasKofiCredits)) {
       const base64Image = imageDataUrl.replace(/^data:image\/\w+;base64,/, '');
-      // Pro users and region captures always get gpt-4o — best answer every time
+      // Pro users and Ko-fi credit holders doing region capture get gpt-4o
       result   = await callOpenAI('gpt-4o', base64Image, pageText);
       upgraded = true;
     } else {

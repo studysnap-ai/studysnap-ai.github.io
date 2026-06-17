@@ -644,6 +644,14 @@ body {
   padding-top: 32px;
   padding-bottom: 28px;
   gap: 14px;
+  position: relative; /* anchors the absolute lang toggle */
+}
+
+/* Language toggle pinned to top-right of the login card */
+.login-lang-btn {
+  position: absolute;
+  top: 12px;
+  right: 12px;
 }
 
 .login-logo {

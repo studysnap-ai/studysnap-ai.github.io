@@ -30,7 +30,8 @@
     "scripting",
     "storage",
     "clipboardWrite",
-    "identity"
+    "identity",
+    "contextMenus"
   ],
 
   "host_permissions": [

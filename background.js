@@ -72,6 +72,30 @@ chrome.commands.onCommand.addListener((command) => {
   }
 });
 
+// ── Context menu: highlight text → Ask StudySnap ───────────────
+// Registered on install/update. Appears in right-click menu whenever
+// the user has text selected. Reuses runTextQuestionFlow — same API
+// call and overlay as the "type a question" box in the popup.
+chrome.runtime.onInstalled.addListener(() => {
+  // removeAll first so updates don't error with "already exists"
+  chrome.contextMenus.removeAll(() => {
+    chrome.contextMenus.create({
+      id:       'studysnap-selection',
+      title:    chrome.i18n.getMessage('contextMenuTitle'),
+      contexts: ['selection'],
+    });
+  });
+});
+
+chrome.contextMenus.onClicked.addListener((info) => {
+  if (info.menuItemId !== 'studysnap-selection') return;
+  const text = info.selectionText?.trim();
+  if (!text) return;
+  // Pass the selected text through the same text-question flow.
+  // No popup to respond to — overlay appears on the page directly.
+  runTextQuestionFlow(text, () => {});
+});
+
 // ── PKCE helpers ─────────────────────────────────────────────
 
 function base64urlEncode(buffer) {
@@ -538,7 +562,6 @@ async function callBackendAPI(screenshotDataUrl, pageText = null, options = {}) 
     },
     body: JSON.stringify({
       imageDataUrl: screenshotDataUrl,
-      token,
       pageText,
       precise:  options.precise  ?? false,
       question: options.question ?? null,
@@ -586,6 +609,26 @@ async function updateHistoryFeedback(entryId, feedback) {
     const { studysnap_history: history = [] } = await chrome.storage.local.get('studysnap_history');
     const updated = history.map(e => e.id === entryId ? { ...e, feedback } : e);
     await chrome.storage.local.set({ studysnap_history: updated });
+
+    // Send to backend for quality analytics (fire-and-forget — never block the UI)
+    const entry = history.find(e => e.id === entryId);
+    const token = await getValidToken();
+    if (token && entry) {
+      fetch(`${BACKEND_URL}/api/feedback`, {
+        method:  'POST',
+        headers: {
+          'Content-Type':  'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          entryId,
+          feedback,
+          questionType: entry.questionType,
+          confidence:   entry.confidence,
+          answer:       entry.answer,
+        }),
+      }).catch(() => {}); // silent — analytics must never crash the extension
+    }
   } catch (err) {
     console.warn('[StudySnap] Feedback save failed:', err);
   }

@@ -14,6 +14,9 @@
   <div id="viewLogin" class="view" hidden>
     <div class="app login-app">
 
+      <!-- Language toggle — visible on login so Spanish users don't have to sign in first -->
+      <button class="icon-btn lang-toggle login-lang-btn" id="langToggleLogin" title="Language / Idioma">ES</button>
+
       <div class="login-logo">
         <span class="logo-icon">⚡</span>
         <span class="logo-text">StudySnap</span>
@@ -34,7 +37,7 @@
       <p class="login-error" id="loginError" hidden></p>
 
       <div class="referral-input-wrap" id="refInputWrap" hidden>
-        <input type="text" class="referral-input" id="refCodeInput" placeholder="Referral code (optional)" maxlength="12" />
+        <input type="text" class="referral-input" id="refCodeInput" data-i18n-ph="referralPlaceholder" placeholder="Referral code (optional)" maxlength="12" />
       </div>
       <p class="login-note" data-i18n="loginNote">Free: 5 captures/day</p>
 

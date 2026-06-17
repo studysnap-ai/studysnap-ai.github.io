@@ -15,6 +15,17 @@ document.addEventListener('DOMContentLoaded', async () => {
   langToggle?.addEventListener('click', async () => {
     await ssSetLang(ssGetLang() === 'es' ? 'en' : 'es');
     renderLangToggle();
+    renderLoginLangToggle();
+  });
+
+  // Login-view lang toggle — same logic, keeps both in sync
+  const langToggleLogin = document.getElementById('langToggleLogin');
+  const renderLoginLangToggle = () => { if (langToggleLogin) langToggleLogin.textContent = ssGetLang() === 'es' ? 'EN' : 'ES'; };
+  renderLoginLangToggle();
+  langToggleLogin?.addEventListener('click', async () => {
+    await ssSetLang(ssGetLang() === 'es' ? 'en' : 'es');
+    renderLoginLangToggle();
+    renderLangToggle();
   });
 
   // ── View refs ───────────────────────────────────────────────
@@ -79,6 +90,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
   } else {
     showView(viewLogin);
+    // Show the referral code input on the login screen
+    document.getElementById('refInputWrap').hidden = false;
   }
 
   // ────────────────────────────────────────────────────────────
@@ -202,6 +215,9 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         usageWrap.hidden    = false;
         proBadgeWrap.hidden = true;
+
+        // Ko-fi credit holders unlock region capture (their perk for supporting)
+        selectBtn.hidden = (data.credits ?? 0) <= 0;
 
         // Free used up: if the user has Ko-fi credits, keep capturing (credits
         // cover it). Otherwise show the upgrade prompt and disable capture.
@@ -327,8 +343,8 @@ document.addEventListener('DOMContentLoaded', async () => {
         captureBtn.disabled  = true;
         showStatus('error', t('dailyLimit'));
         // Reload usage bar
-        chrome.storage.local.get('ss_access_token').then(({ ss_access_token: t }) => {
-          if (t) loadUsage(t);
+        chrome.storage.local.get('ss_access_token').then(({ ss_access_token: tok }) => {
+          if (tok) loadUsage(tok);
         });
       } else {
         showStatus('error', response?.error || t('somethingWrong'));
@@ -361,8 +377,8 @@ document.addEventListener('DOMContentLoaded', async () => {
       } else if (response?.limitReached) {
         upgradePrompt.hidden = false;
         showStatus('error', t('dailyLimit'));
-        chrome.storage.local.get('ss_access_token').then(({ ss_access_token: t }) => {
-          if (t) loadUsage(t);
+        chrome.storage.local.get('ss_access_token').then(({ ss_access_token: tok }) => {
+          if (tok) loadUsage(tok);
         });
       } else {
         showStatus('error', response?.error || t('somethingWrong'));
@@ -448,6 +464,8 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     // ── Referral link + progress ───────────────────────────────────────────
     if (user?.id) {
+      document.getElementById('referralSection').hidden = false;
+
       const shortCode = user.id.slice(0, 8);
       const refUrl    = `https://trystudysnap.com?ref=${shortCode}`;
       referralLink.textContent = refUrl;

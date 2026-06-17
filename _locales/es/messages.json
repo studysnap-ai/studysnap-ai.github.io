@@ -1,5 +1,7 @@
 {
   "appDesc": { "message": "Asistente de estudio con IA. Captura cualquier pregunta y obtén una respuesta al instante — sin clave API." },
+  "contextMenuTitle": { "message": "⚡ Preguntar a StudySnap" },
+  "referralPlaceholder": { "message": "Código de referido (opcional)" },
 
   "tagline": { "message": "Asistente de estudio con IA." },
   "continueWithGoogle": { "message": "Continuar con Google" },

@@ -56,6 +56,9 @@
     requestAnimationFrame(() => {
       requestAnimationFrame(() => {
         overlayEl.classList.add('ss-visible');
+        // Scroll body to top (important when re-opening after a prior multi-Q result)
+        const body = overlayEl.querySelector('.ss-body');
+        if (body) body.scrollTop = 0;
         // Animate every confidence bar (one per question card)
         overlayEl.querySelectorAll('.ss-conf-fill').forEach(fill => {
           fill.style.width = fill.dataset.target;
@@ -82,11 +85,15 @@
     root.id = 'studysnap-overlay';
 
     // ── Header ──────────────────────────────────────────────────────────────
+    const countBadge = questions.length > 1
+      ? `<span class="ss-q-count" title="${questions.length} questions answered">${questions.length}</span>`
+      : '';
+
     root.innerHTML = `
       <div class="ss-header">
         <div class="ss-brand">
           <span class="ss-brand-icon">&#x26A1;</span>
-          <span class="ss-brand-name">StudySnap</span>
+          <span class="ss-brand-name">StudySnap</span>${countBadge}
         </div>
         <button class="ss-close" aria-label="Close StudySnap">&times;</button>
       </div>

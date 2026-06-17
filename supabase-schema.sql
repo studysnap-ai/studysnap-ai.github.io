@@ -27,6 +27,9 @@ create table if not exists subscriptions (
 alter table usage         enable row level security;
 alter table subscriptions enable row level security;
 
+drop policy if exists "Users see own usage"        on usage;
+drop policy if exists "Users see own subscription" on subscriptions;
+
 create policy "Users see own usage"
   on usage for all using (auth.uid() = user_id);
 
@@ -128,6 +131,8 @@ create table if not exists referrals (
 );
 
 alter table referrals enable row level security;
+
+drop policy if exists "Users see own referrals" on referrals;
 
 create policy "Users see own referrals"
   on referrals for select using (auth.uid() = referrer_id);

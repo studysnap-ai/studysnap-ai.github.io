@@ -1,5 +1,7 @@
 {
   "appDesc": { "message": "AI-powered study assistant. Capture any question and get an instant answer — no API key needed." },
+  "contextMenuTitle": { "message": "⚡ Ask StudySnap" },
+  "referralPlaceholder": { "message": "Referral code (optional)" },
 
   "tagline": { "message": "AI study assistant." },
   "continueWithGoogle": { "message": "Continue with Google" },

@@ -453,6 +453,25 @@
   gap:            16px          !important;
 }
 
+/* Header count badge — "3" pill shown when multiple questions are answered */
+#studysnap-overlay .ss-q-count {
+  display:         inline-flex    !important;
+  align-items:     center         !important;
+  justify-content: center         !important;
+  margin-left:     7px            !important;
+  min-width:       20px           !important;
+  height:          18px           !important;
+  padding:         0 6px          !important;
+  background:      #6366f1        !important;
+  color:           #fff           !important;
+  font-size:       10px           !important;
+  font-weight:     700            !important;
+  border-radius:   9px            !important;
+  letter-spacing:  0              !important;
+  vertical-align:  middle         !important;
+  line-height:     1              !important;
+}
+
 /* Q1 / Q2 number badge */
 #studysnap-overlay .ss-q-num {
   display:        inline-block              !important;
